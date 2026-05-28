@@ -1,4 +1,3 @@
-import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { getConfiguredUserRole } from "@/lib/auth/access";
 import { getPrismaClient } from "@/lib/db/prisma";
 import { getActiveWorkspaceContext } from "@/lib/workspaces/selection";
@@ -6,32 +5,45 @@ import { getActiveWorkspaceContext } from "@/lib/workspaces/selection";
 const DEFAULT_NICHE = "AI, AI automation, and digital marketing";
 const DEFAULT_AUDIENCE = "Creators, agencies, coaches, course sellers, B2B SaaS marketers, and digital marketing consultants";
 
-export async function bootstrapUserWorkspace(supabaseUser: SupabaseUser) {
+export type AuthenticatedUser = {
+  id?: string | null;
+  email?: string | null;
+  name?: string | null;
+  image?: string | null;
+};
+
+export async function bootstrapUserWorkspace(authUser: AuthenticatedUser) {
   const prisma = getPrismaClient();
-  const email = supabaseUser.email;
+  const email = authUser.email?.trim().toLowerCase();
 
   if (!email) {
-    throw new Error("Supabase user email is required to bootstrap an app user.");
+    throw new Error("Authenticated user email is required to bootstrap an app user.");
   }
 
   const configuredRole = getConfiguredUserRole(email);
   const isConfiguredAdmin = configuredRole === "ADMIN";
+  const displayName = typeof authUser.name === "string" && authUser.name.trim().length > 0
+    ? authUser.name.trim()
+    : undefined;
+  const image = typeof authUser.image === "string" && authUser.image.trim().length > 0
+    ? authUser.image.trim()
+    : undefined;
 
   return prisma.$transaction(async (tx) => {
     const user = await tx.user.upsert({
       where: { email },
       update: {
-        avatarUrl: typeof supabaseUser.user_metadata.avatar_url === "string" ? supabaseUser.user_metadata.avatar_url : undefined,
-        name: typeof supabaseUser.user_metadata.full_name === "string" ? supabaseUser.user_metadata.full_name : undefined,
+        avatarUrl: image,
+        image,
+        name: displayName,
         role: isConfiguredAdmin ? configuredRole : undefined,
-        supabaseUserId: supabaseUser.id,
       },
       create: {
         email,
-        avatarUrl: typeof supabaseUser.user_metadata.avatar_url === "string" ? supabaseUser.user_metadata.avatar_url : undefined,
-        name: typeof supabaseUser.user_metadata.full_name === "string" ? supabaseUser.user_metadata.full_name : email.split("@")[0],
+        avatarUrl: image,
+        image,
+        name: displayName ?? email.split("@")[0],
         role: configuredRole,
-        supabaseUserId: supabaseUser.id,
       },
     });
 

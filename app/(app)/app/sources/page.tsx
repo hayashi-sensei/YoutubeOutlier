@@ -1,17 +1,11 @@
-import { redirect } from "next/navigation";
 import {
   addIndustrySource,
   archiveIndustrySource,
   fetchIndustrySourceItems,
 } from "@/actions/sources";
-import { bootstrapUserWorkspace } from "@/lib/auth/bootstrap";
+import { requireUserWorkspace } from "@/lib/auth/session";
 import { getPrismaClient } from "@/lib/db/prisma";
 import { recommendIndustrySources } from "@/lib/sources/recommendations";
-import { createClient } from "@/lib/supabase/server";
-
-function redirectTo(url: string): never {
-  redirect(url as never);
-}
 
 function formatDate(value: Date | null) {
   if (!value) {
@@ -59,16 +53,7 @@ type SourcesPageProps = {
 export default async function SourcesPage({ searchParams }: SourcesPageProps) {
   const resolvedSearchParams = await searchParams;
   const statusMessage = getStatusMessage(resolvedSearchParams);
-  const supabase = await createClient();
-  const {
-    data: { user: supabaseUser },
-  } = await supabase.auth.getUser();
-
-  if (!supabaseUser) {
-    redirectTo("/sign-in");
-  }
-
-  const { workspaceId } = await bootstrapUserWorkspace(supabaseUser);
+  const { workspaceId } = await requireUserWorkspace("/app/sources");
   const prisma = getPrismaClient();
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },

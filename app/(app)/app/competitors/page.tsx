@@ -1,4 +1,3 @@
-import { redirect } from "next/navigation";
 import { CompetitorChannelForm } from "@/components/competitors/competitor-channel-form";
 import {
   RecommendationQueue,
@@ -9,19 +8,14 @@ import {
   type TrackedChannelListItem,
 } from "@/components/competitors/tracked-channel-list";
 import type { ActiveChannelSearchItem } from "@/components/competitors/active-channel-smart-search";
-import { bootstrapUserWorkspace } from "@/lib/auth/bootstrap";
+import { requireUserWorkspace } from "@/lib/auth/session";
 import { getWorkspacePlanEntitlement } from "@/lib/billing/plan-limits";
 import { getCompetitorChannelIntelligence } from "@/lib/competitors/channel-intelligence";
 import { getPrismaClient } from "@/lib/db/prisma";
-import { createClient } from "@/lib/supabase/server";
 
 const ACTIVE_CHANNEL_PAGE_SIZE = 25;
 const ACTIVE_CHANNEL_PAGE_PARAM = "activePage";
 const ACTIVE_CHANNEL_SEARCH_PARAM = "channelSearch";
-
-function redirectTo(url: string): never {
-  redirect(url as never);
-}
 
 export default async function CompetitorsPage({
   searchParams,
@@ -31,16 +25,7 @@ export default async function CompetitorsPage({
   const query = (await searchParams) ?? {};
   const activeSearchQuery = typeof query.channelSearch === "string" ? query.channelSearch.trim() : "";
   const requestedActivePage = Math.max(1, Number.parseInt(query.activePage ?? "1", 10) || 1);
-  const supabase = await createClient();
-  const {
-    data: { user: supabaseUser },
-  } = await supabase.auth.getUser();
-
-  if (!supabaseUser) {
-    redirectTo("/sign-in");
-  }
-
-  const { workspaceId } = await bootstrapUserWorkspace(supabaseUser);
+  const { workspaceId } = await requireUserWorkspace("/app/competitors");
   const prisma = getPrismaClient();
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },

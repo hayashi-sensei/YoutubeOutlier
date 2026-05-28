@@ -3,25 +3,15 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { applyAdminCreditAdjustment } from "@/lib/billing/credits";
-import { bootstrapUserWorkspace } from "@/lib/auth/bootstrap";
+import { requireUserWorkspace } from "@/lib/auth/session";
 import { getPrismaClient } from "@/lib/db/prisma";
-import { createClient } from "@/lib/supabase/server";
 
 function redirectTo(url: string): never {
   redirect(url as never);
 }
 
 export async function adjustWorkspaceCredits(formData: FormData) {
-  const supabase = await createClient();
-  const {
-    data: { user: supabaseUser },
-  } = await supabase.auth.getUser();
-
-  if (!supabaseUser) {
-    redirectTo("/sign-in?next=/app/admin");
-  }
-
-  const { user } = await bootstrapUserWorkspace(supabaseUser);
+  const { user } = await requireUserWorkspace("/app/admin");
   const prisma = getPrismaClient();
   const actor = await prisma.user.findUnique({
     where: { id: user.id },

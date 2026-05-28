@@ -13,6 +13,9 @@ Use this checklist at the start of each spec. Mark an item when the current spec
 - [x] Google OAuth
   - Specs: [002 Auth And User Settings](./002-auth-and-user-settings.md)
   - Notes: Used for sign-in/sign-up.
+- [ ] Auth.js email/password auth
+  - Specs: [028 Auth.js Email Password Auth](./028-authjs-email-password.md)
+  - Notes: Follow-up to Spec 026 for first-party credential registration, email verification, and password reset through Auth.js-compatible server-side flows.
 - [ ] Stripe billing
   - Specs: [003 Billing Credits And Plans](./003-billing-credits-and-plans.md)
   - Notes: Plan and credit foundations exist; verify live checkout, customer portal, and webhooks before ticking.

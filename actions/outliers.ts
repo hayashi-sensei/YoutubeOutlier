@@ -2,29 +2,19 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { bootstrapUserWorkspace } from "@/lib/auth/bootstrap";
+import { requireUserWorkspace } from "@/lib/auth/session";
 import { getPrismaClient } from "@/lib/db/prisma";
 import {
   backfillMissingWorkspaceOutlierScores,
   type MissingOutlierScoreBackfillPrisma,
 } from "@/lib/outliers/backfill";
-import { createClient } from "@/lib/supabase/server";
 
 function redirectTo(url: string): never {
   redirect(url as never);
 }
 
 async function getWorkspaceId() {
-  const supabase = await createClient();
-  const {
-    data: { user: supabaseUser },
-  } = await supabase.auth.getUser();
-
-  if (!supabaseUser) {
-    redirectTo("/sign-in");
-  }
-
-  const { workspaceId } = await bootstrapUserWorkspace(supabaseUser);
+  const { workspaceId } = await requireUserWorkspace("/app/outliers");
   return workspaceId;
 }
 

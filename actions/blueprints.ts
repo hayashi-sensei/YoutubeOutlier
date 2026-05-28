@@ -2,29 +2,19 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { bootstrapUserWorkspace } from "@/lib/auth/bootstrap";
+import { requireUserWorkspace } from "@/lib/auth/session";
 import {
   runCompetitorBlueprintAnalysisJob,
   type BlueprintRunnerPrisma,
 } from "@/lib/blueprints/runner";
 import { getPrismaClient } from "@/lib/db/prisma";
-import { createClient } from "@/lib/supabase/server";
 
 function redirectTo(url: string): never {
   redirect(url as never);
 }
 
 export async function refreshCompetitorBlueprints() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirectTo("/sign-in");
-  }
-
-  const { workspaceId } = await bootstrapUserWorkspace(user);
+  const { workspaceId } = await requireUserWorkspace("/app/dashboard");
   const prisma = getPrismaClient();
 
   let summary;
@@ -46,17 +36,8 @@ export async function refreshCompetitorBlueprints() {
 }
 
 export async function refreshCompetitorChannelBlueprint(formData: FormData) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirectTo("/sign-in");
-  }
-
   const trackedChannelId = stringField(formData, "trackedChannelId");
-  const { workspaceId } = await bootstrapUserWorkspace(user);
+  const { workspaceId } = await requireUserWorkspace(`/app/competitors/${trackedChannelId}`);
   const prisma = getPrismaClient();
   const trackedChannel = await prisma.trackedChannel.findFirst({
     where: {

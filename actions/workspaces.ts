@@ -2,10 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { bootstrapUserWorkspace } from "@/lib/auth/bootstrap";
+import { requireUserWorkspace } from "@/lib/auth/session";
 import { getWorkspacePlanEntitlement } from "@/lib/billing/plan-limits";
 import { getPrismaClient } from "@/lib/db/prisma";
-import { createClient } from "@/lib/supabase/server";
 import { deleteWorkspaceForUser, WorkspaceDeletionError } from "@/lib/workspaces/deletion";
 import { workspaceCreateSchema, workspaceDeleteSchema, workspaceSwitchSchema } from "@/schemas/workspaces";
 
@@ -24,16 +23,7 @@ function appRedirectTarget(value: string | undefined) {
 }
 
 async function getAppUserOrRedirect() {
-  const supabase = await createClient();
-  const {
-    data: { user: supabaseUser },
-  } = await supabase.auth.getUser();
-
-  if (!supabaseUser) {
-    redirectTo("/sign-in");
-  }
-
-  return bootstrapUserWorkspace(supabaseUser);
+  return requireUserWorkspace("/app/settings");
 }
 
 export async function switchWorkspace(formData: FormData) {

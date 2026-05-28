@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { bootstrapUserWorkspace } from "@/lib/auth/bootstrap";
+import { requireUserWorkspace } from "@/lib/auth/session";
 import { getPrismaClient } from "@/lib/db/prisma";
 import {
   deleteFailedWorkspaceResearchReports,
@@ -10,23 +10,13 @@ import {
   type ResearchReportDeletionPrisma,
 } from "@/lib/reports/deletion";
 import { generateManualReportForWorkspace } from "@/lib/reports/manual";
-import { createClient } from "@/lib/supabase/server";
 
 function redirectTo(url: string): never {
   redirect(url as never);
 }
 
 export async function generateManualResearchReport() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirectTo("/sign-in");
-  }
-
-  const { user: appUser, workspaceId } = await bootstrapUserWorkspace(user);
+  const { user: appUser, workspaceId } = await requireUserWorkspace("/app/reports");
   const prisma = getPrismaClient();
 
   let summary;
@@ -46,22 +36,13 @@ export async function generateManualResearchReport() {
 }
 
 export async function deleteResearchReport(formData: FormData) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirectTo("/sign-in");
-  }
-
   const reportId = String(formData.get("reportId") ?? "").trim();
 
   if (!reportId) {
     redirectTo("/app/reports?error=REPORT_DELETE_FAILED");
   }
 
-  const { workspaceId } = await bootstrapUserWorkspace(user);
+  const { workspaceId } = await requireUserWorkspace("/app/reports");
   const prisma = getPrismaClient();
   const result = await deleteWorkspaceResearchReport(prisma as unknown as ResearchReportDeletionPrisma, {
     workspaceId,
@@ -73,16 +54,7 @@ export async function deleteResearchReport(formData: FormData) {
 }
 
 export async function deleteFailedResearchReports() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirectTo("/sign-in");
-  }
-
-  const { workspaceId } = await bootstrapUserWorkspace(user);
+  const { workspaceId } = await requireUserWorkspace("/app/reports");
   const prisma = getPrismaClient();
   const result = await deleteFailedWorkspaceResearchReports(prisma as unknown as ResearchReportDeletionPrisma, {
     workspaceId,

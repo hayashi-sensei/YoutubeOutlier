@@ -3,9 +3,8 @@ import type { Route } from "next";
 import { signOut } from "@/actions/auth";
 import { AppNav } from "@/components/app-shell/app-nav";
 import { WorkspaceSwitcher } from "@/components/app-shell/workspace-switcher";
-import { bootstrapUserWorkspace } from "@/lib/auth/bootstrap";
+import { requireUserWorkspace } from "@/lib/auth/session";
 import { getPrismaClient } from "@/lib/db/prisma";
-import { createClient } from "@/lib/supabase/server";
 import { getActiveWorkspaceContext } from "@/lib/workspaces/selection";
 
 const navItems: Array<{ href: Route; label: string }> = [
@@ -31,18 +30,12 @@ function getDisplayName(input: { email?: string; name?: unknown }) {
 }
 
 export async function AppShell({ children }: { children: React.ReactNode }) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const bootstrap = user ? await bootstrapUserWorkspace(user) : null;
+  const bootstrap = await requireUserWorkspace("/app/dashboard");
   const prisma = getPrismaClient();
-  const workspaceContext = bootstrap
-    ? await getActiveWorkspaceContext(prisma, { userId: bootstrap.user.id })
-    : null;
+  const workspaceContext = await getActiveWorkspaceContext(prisma, { userId: bootstrap.user.id });
   const displayName = getDisplayName({
-    email: user?.email,
-    name: user?.user_metadata.name,
+    email: bootstrap.user.email,
+    name: bootstrap.user.name,
   });
 
   return (
@@ -77,7 +70,7 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
             <div className="flex items-center gap-2 rounded-[var(--yt-radius-button)] border border-[var(--yt-border)] bg-white px-2 py-1.5">
               <div className="hidden min-w-0 sm:block">
                 <p className="max-w-[180px] truncate text-sm font-bold text-[var(--yt-text)]">{displayName}</p>
-                {user?.email ? <p className="max-w-[180px] truncate text-xs font-semibold text-[var(--yt-text-muted)]">{user.email}</p> : null}
+                <p className="max-w-[180px] truncate text-xs font-semibold text-[var(--yt-text-muted)]">{bootstrap.user.email}</p>
               </div>
               <Link
                 className="rounded-[var(--yt-radius-button)] px-2 py-1.5 text-xs font-bold text-[var(--yt-primary)] hover:bg-[var(--yt-primary-soft)]"

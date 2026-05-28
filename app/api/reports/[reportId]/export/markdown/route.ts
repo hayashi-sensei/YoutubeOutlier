@@ -1,25 +1,21 @@
 import { NextResponse } from "next/server";
-import { bootstrapUserWorkspace } from "@/lib/auth/bootstrap";
+import { getOptionalUserWorkspace } from "@/lib/auth/session";
 import { getPrismaClient } from "@/lib/db/prisma";
 import { renderResearchReportMarkdown } from "@/lib/reports/export";
 import { getWorkspaceResearchReportDetail } from "@/lib/reports/queries";
-import { createClient } from "@/lib/supabase/server";
 
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ reportId: string }> },
 ) {
   const { reportId } = await params;
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const context = await getOptionalUserWorkspace();
 
-  if (!user) {
+  if (!context) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { workspaceId } = await bootstrapUserWorkspace(user);
+  const { workspaceId } = context;
   const report = await getWorkspaceResearchReportDetail(getPrismaClient(), {
     workspaceId,
     reportId,

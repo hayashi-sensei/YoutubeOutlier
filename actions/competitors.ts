@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { bootstrapUserWorkspace } from "@/lib/auth/bootstrap";
+import { requireUserWorkspace } from "@/lib/auth/session";
 import {
   addTrackedChannel,
   archiveTrackedChannel,
@@ -17,7 +17,6 @@ import {
   type CompetitorChannelSyncPrisma,
 } from "@/lib/competitors/sync";
 import { getPrismaClient } from "@/lib/db/prisma";
-import { createClient } from "@/lib/supabase/server";
 import { parseYoutubeChannelUrl } from "@/lib/youtube/channel-url";
 import {
   addCompetitorSchema,
@@ -43,16 +42,7 @@ function safeParseChannelUrl(channelUrl: string) {
 }
 
 async function getWorkspaceId() {
-  const supabase = await createClient();
-  const {
-    data: { user: supabaseUser },
-  } = await supabase.auth.getUser();
-
-  if (!supabaseUser) {
-    redirectTo("/sign-in");
-  }
-
-  const { workspaceId } = await bootstrapUserWorkspace(supabaseUser);
+  const { workspaceId } = await requireUserWorkspace("/app/competitors");
   return workspaceId;
 }
 

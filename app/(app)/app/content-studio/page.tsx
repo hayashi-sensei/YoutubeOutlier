@@ -1,28 +1,13 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { createManualWorkspace, openRecommendationWorkspace } from "@/actions/content-workspace";
 import { BlueprintSummaryPanel } from "@/components/blueprints/blueprint-summary-panel";
-import { bootstrapUserWorkspace } from "@/lib/auth/bootstrap";
+import { requireUserWorkspace } from "@/lib/auth/session";
 import { getWorkspaceBlueprintSummaries } from "@/lib/blueprints/queries";
 import { getPrismaClient } from "@/lib/db/prisma";
 import { getWorkspaceTopicRecommendations } from "@/lib/recommendations/queries";
-import { createClient } from "@/lib/supabase/server";
-
-function redirectTo(url: string): never {
-  redirect(url as never);
-}
 
 export default async function ContentStudioPage() {
-  const supabase = await createClient();
-  const {
-    data: { user: supabaseUser },
-  } = await supabase.auth.getUser();
-
-  if (!supabaseUser) {
-    redirectTo("/sign-in");
-  }
-
-  const { workspaceId } = await bootstrapUserWorkspace(supabaseUser);
+  const { workspaceId } = await requireUserWorkspace("/app/content-studio");
   const prisma = getPrismaClient();
   const [blueprints, recommendations, contentItems] = await Promise.all([
     getWorkspaceBlueprintSummaries(prisma, {

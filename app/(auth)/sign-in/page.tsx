@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Route } from "next";
-import { signInWithGoogle, signInWithPassword } from "@/actions/auth";
+import { signInWithGoogle } from "@/actions/auth";
 
 export default async function SignInPage({
   searchParams,
@@ -25,18 +25,10 @@ export default async function SignInPage({
             Continue with Google
           </button>
         </form>
-        <form action={signInWithPassword} className="mt-5 space-y-3">
-          <input name="next" type="hidden" value={params.next ?? "/app/dashboard"} />
-          <input className="w-full rounded-[var(--yt-radius-button)] border border-[var(--yt-border)] px-3 py-2 text-sm" name="email" placeholder="Email" type="email" />
-          <input className="w-full rounded-[var(--yt-radius-button)] border border-[var(--yt-border)] px-3 py-2 text-sm" name="password" placeholder="Password" type="password" />
-          <button className="w-full rounded-[var(--yt-radius-button)] border border-[var(--yt-primary)] px-4 py-2.5 text-sm font-bold text-[var(--yt-primary)]" type="submit">
-            Sign in with email
-          </button>
-        </form>
         <p className="mt-5 text-center text-sm text-[var(--yt-text-muted)]">
-          Need an account?{" "}
+          New here?{" "}
           <Link className="font-bold text-[var(--yt-primary)]" href={"/sign-up" as Route}>
-            Register with email
+            Continue with Google
           </Link>
         </p>
       </section>

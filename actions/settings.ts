@@ -2,13 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { bootstrapUserWorkspace } from "@/lib/auth/bootstrap";
+import { requireUserWorkspace } from "@/lib/auth/session";
 import { getPrismaClient } from "@/lib/db/prisma";
 import {
   cleanWorkspaceResearchCache,
   type ResearchCacheCleanupTx,
 } from "@/lib/settings/research-cache";
-import { createClient } from "@/lib/supabase/server";
 import { parseWritingSamples, settingsSchema } from "@/schemas/settings";
 
 function redirectTo(url: string): never {
@@ -21,16 +20,7 @@ function getOptionalString(formData: FormData, key: string) {
 }
 
 export async function updateWorkspaceSettings(formData: FormData) {
-  const supabase = await createClient();
-  const {
-    data: { user: supabaseUser },
-  } = await supabase.auth.getUser();
-
-  if (!supabaseUser) {
-    redirectTo("/sign-in");
-  }
-
-  const { workspaceId } = await bootstrapUserWorkspace(supabaseUser);
+  const { user, workspaceId } = await requireUserWorkspace("/app/settings");
   const input = settingsSchema.parse({
     primaryNiche: String(formData.get("primaryNiche") ?? ""),
     subNiche: getOptionalString(formData, "subNiche"),
@@ -89,7 +79,7 @@ export async function updateWorkspaceSettings(formData: FormData) {
         topicsToAvoid: input.topicsToAvoid,
         defaultAiQualityTier: input.defaultAiQualityTier,
         dailyReportEnabled: input.dailyReportEnabled,
-        reportDeliveryEmail: input.reportDeliveryEmail || supabaseUser.email,
+        reportDeliveryEmail: input.reportDeliveryEmail || user.email,
         recommendationsStaleAt: new Date(),
       },
       select: { id: true },
@@ -115,16 +105,7 @@ export async function updateWorkspaceSettings(formData: FormData) {
 }
 
 export async function cleanResearchCache() {
-  const supabase = await createClient();
-  const {
-    data: { user: supabaseUser },
-  } = await supabase.auth.getUser();
-
-  if (!supabaseUser) {
-    redirectTo("/sign-in");
-  }
-
-  const { workspaceId } = await bootstrapUserWorkspace(supabaseUser);
+  const { workspaceId } = await requireUserWorkspace("/app/settings");
   const prisma = getPrismaClient();
   const summary = await prisma.$transaction((tx) =>
     cleanWorkspaceResearchCache({

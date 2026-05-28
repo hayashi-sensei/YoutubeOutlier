@@ -1,17 +1,15 @@
-import { redirect } from "next/navigation";
 import { refreshCompetitorBlueprints } from "@/actions/blueprints";
 import { generateTopicRecommendations } from "@/actions/recommendations";
 import { BlueprintSummaryPanel } from "@/components/blueprints/blueprint-summary-panel";
 import { KpiCard } from "@/components/dashboard/kpi-card";
 import { Panel } from "@/components/dashboard/panel";
 import { AiOperationSubmit } from "@/components/shared/ai-operation-submit";
-import { bootstrapUserWorkspace } from "@/lib/auth/bootstrap";
+import { requireUserWorkspace } from "@/lib/auth/session";
 import { getWorkspacePlanEntitlement } from "@/lib/billing/plan-limits";
 import { getWorkspaceBlueprintSummaries } from "@/lib/blueprints/queries";
 import { getPrismaClient } from "@/lib/db/prisma";
 import { getTopWorkspaceOutliers } from "@/lib/outliers/queries";
 import { getWorkspaceTopicRecommendations } from "@/lib/recommendations/queries";
-import { createClient } from "@/lib/supabase/server";
 
 const INGESTION_JOB_TYPES = ["youtube_channel_backfill", "youtube_recent_refresh"];
 
@@ -19,10 +17,6 @@ type TopOutlierPresentation = Awaited<ReturnType<typeof getTopWorkspaceOutliers>
   thumbnailUrl: string | null;
   channelHandle: string | null;
 };
-
-function redirectTo(url: string): never {
-  redirect(url as never);
-}
 
 function formatCompactNumber(value: bigint | number | null | undefined) {
   if (value === null || value === undefined) {
@@ -88,16 +82,7 @@ function statusClassName(status: string) {
 }
 
 export default async function DashboardPage() {
-  const supabase = await createClient();
-  const {
-    data: { user: supabaseUser },
-  } = await supabase.auth.getUser();
-
-  if (!supabaseUser) {
-    redirectTo("/sign-in");
-  }
-
-  const { user, workspaceId } = await bootstrapUserWorkspace(supabaseUser);
+  const { user, workspaceId } = await requireUserWorkspace("/app/dashboard");
   const prisma = getPrismaClient();
   const [workspace, account] = await Promise.all([
     prisma.workspace.findUnique({

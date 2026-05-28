@@ -2,14 +2,13 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { bootstrapUserWorkspace } from "@/lib/auth/bootstrap";
+import { requireUserWorkspace } from "@/lib/auth/session";
 import {
   createCalendarItem as createCalendarItemMutation,
   updateCalendarItem as updateCalendarItemMutation,
   type CalendarMutationPrisma,
 } from "@/lib/calendar/mutations";
 import { getPrismaClient } from "@/lib/db/prisma";
-import { createClient } from "@/lib/supabase/server";
 import { createCalendarItemSchema, updateCalendarItemSchema } from "@/schemas/calendar";
 
 function redirectTo(url: string): never {
@@ -18,7 +17,7 @@ function redirectTo(url: string): never {
 
 export async function createCalendarItem(formData: FormData) {
   const prisma = getPrismaClient();
-  const { user, workspaceId: defaultWorkspaceId } = await getCalendarUserContextOrRedirect(prisma);
+  const { user, workspaceId: defaultWorkspaceId } = await getCalendarUserContextOrRedirect();
   const workspaceIds = await getUserWorkspaceIds(prisma, user.id);
   const parsed = createCalendarItemSchema.safeParse({
     workspaceId: formData.get("workspaceId") ?? defaultWorkspaceId,
@@ -53,7 +52,7 @@ export async function createCalendarItem(formData: FormData) {
 
 export async function updateCalendarItem(formData: FormData) {
   const prisma = getPrismaClient();
-  const { user } = await getCalendarUserContextOrRedirect(prisma);
+  const { user } = await getCalendarUserContextOrRedirect();
   const workspaceIds = await getUserWorkspaceIds(prisma, user.id);
   const parsed = updateCalendarItemSchema.safeParse({
     contentItemId: formData.get("contentItemId"),
@@ -90,17 +89,8 @@ export async function updateCalendarItem(formData: FormData) {
   redirectTo(`${returnTo}${returnTo.includes("?") ? "&" : "?"}saved=calendar`);
 }
 
-async function getCalendarUserContextOrRedirect(prisma: ReturnType<typeof getPrismaClient>) {
-  const supabase = await createClient();
-  const {
-    data: { user: supabaseUser },
-  } = await supabase.auth.getUser();
-
-  if (!supabaseUser) {
-    redirectTo("/sign-in");
-  }
-
-  return bootstrapUserWorkspace(supabaseUser);
+async function getCalendarUserContextOrRedirect() {
+  return requireUserWorkspace("/app/calendar");
 }
 
 async function getUserWorkspaceIds(prisma: ReturnType<typeof getPrismaClient>, userId: string): Promise<string[]> {

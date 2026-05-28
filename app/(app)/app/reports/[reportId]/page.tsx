@@ -1,14 +1,9 @@
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
-import { bootstrapUserWorkspace } from "@/lib/auth/bootstrap";
+import { notFound } from "next/navigation";
+import { requireUserWorkspace } from "@/lib/auth/session";
 import { getPrismaClient } from "@/lib/db/prisma";
 import { getWorkspaceResearchReportDetail } from "@/lib/reports/queries";
 import { getReportSectionThumbnailUrl } from "@/lib/reports/section-media";
-import { createClient } from "@/lib/supabase/server";
-
-function redirectTo(url: string): never {
-  redirect(url as never);
-}
 
 export default async function ReportDetailPage({
   params,
@@ -19,16 +14,7 @@ export default async function ReportDetailPage({
 }) {
   const { reportId } = await params;
   const query = searchParams ? await searchParams : {};
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirectTo("/sign-in");
-  }
-
-  const { workspaceId } = await bootstrapUserWorkspace(user);
+  const { workspaceId } = await requireUserWorkspace(`/app/reports/${reportId}`);
   const prisma = getPrismaClient();
   const report = await getWorkspaceResearchReportDetail(prisma, {
     workspaceId,

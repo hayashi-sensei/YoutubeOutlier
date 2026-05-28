@@ -1,9 +1,7 @@
-import { redirect } from "next/navigation";
 import { cleanResearchCache, updateWorkspaceSettings } from "@/actions/settings";
 import { createWorkspace, deleteWorkspace } from "@/actions/workspaces";
-import { bootstrapUserWorkspace } from "@/lib/auth/bootstrap";
+import { requireUserWorkspace } from "@/lib/auth/session";
 import { getPrismaClient } from "@/lib/db/prisma";
-import { createClient } from "@/lib/supabase/server";
 import { getActiveWorkspaceContext } from "@/lib/workspaces/selection";
 
 function Field({
@@ -24,10 +22,6 @@ function Field({
 const inputClass = "yt-input font-normal";
 const textareaClass = `${inputClass} min-h-24 resize-y leading-6`;
 
-function redirectTo(url: string): never {
-  redirect(url as never);
-}
-
 export default async function SettingsPage({
   searchParams,
 }: {
@@ -41,16 +35,7 @@ export default async function SettingsPage({
     error?: string;
   }>;
 }) {
-  const supabase = await createClient();
-  const {
-    data: { user: supabaseUser },
-  } = await supabase.auth.getUser();
-
-  if (!supabaseUser) {
-    redirectTo("/sign-in");
-  }
-
-  const { user, workspaceId } = await bootstrapUserWorkspace(supabaseUser);
+  const { user, workspaceId } = await requireUserWorkspace("/app/settings");
   const prisma = getPrismaClient();
   const [workspace, workspaceContext] = await Promise.all([
     prisma.workspace.findUnique({

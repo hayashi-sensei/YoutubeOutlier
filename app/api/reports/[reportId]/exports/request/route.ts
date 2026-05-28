@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { bootstrapUserWorkspace } from "@/lib/auth/bootstrap";
+import { getOptionalUserWorkspace } from "@/lib/auth/session";
 import { getPrismaClient } from "@/lib/db/prisma";
 import { parseReportExportFileType } from "@/lib/reports/export";
 import {
@@ -10,19 +10,15 @@ import {
   requestReportExportDownloadForWorkspace,
   type ExportRequestPrisma,
 } from "@/lib/reports/export-request";
-import { createClient } from "@/lib/supabase/server";
 
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ reportId: string }> },
 ) {
   const { reportId } = await params;
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const context = await getOptionalUserWorkspace();
 
-  if (!user) {
+  if (!context) {
     return NextResponse.redirect(new URL(`/sign-in?next=/app/reports/${reportId}`, request.url), 303);
   }
 
@@ -32,7 +28,7 @@ export async function POST(
     return NextResponse.redirect(new URL(`/app/reports/${reportId}?error=EXPORT_REQUEST_FAILED`, request.url), 303);
   }
 
-  const { workspaceId } = await bootstrapUserWorkspace(user);
+  const { workspaceId } = context;
   const prisma = getPrismaClient();
   let result;
   try {

@@ -1,21 +1,12 @@
 import { describe, expect, test, vi } from "vitest";
 
-const getUser = vi.fn();
-const bootstrapUserWorkspace = vi.fn();
+const getOptionalUserWorkspace = vi.fn();
 const getPrismaClient = vi.fn();
 const requestReportExportDownloadForWorkspace = vi.fn();
 const getReportExportDownload = vi.fn();
 
-vi.mock("../../lib/supabase/server", () => ({
-  createClient: vi.fn(async () => ({
-    auth: {
-      getUser,
-    },
-  })),
-}));
-
-vi.mock("../../lib/auth/bootstrap", () => ({
-  bootstrapUserWorkspace,
+vi.mock("../../lib/auth/session", () => ({
+  getOptionalUserWorkspace,
 }));
 
 vi.mock("../../lib/db/prisma", () => ({
@@ -32,8 +23,7 @@ vi.mock("../../lib/reports/export-download", () => ({
 
 describe("report export request route", () => {
   test("redirects to a visible error when direct export processing throws", async () => {
-    getUser.mockResolvedValue({ data: { user: { id: "user-1" } } });
-    bootstrapUserWorkspace.mockResolvedValue({ workspaceId: "workspace-1" });
+    getOptionalUserWorkspace.mockResolvedValue({ workspaceId: "workspace-1" });
     getPrismaClient.mockReturnValue({});
     requestReportExportDownloadForWorkspace.mockRejectedValue(new Error("Only completed reports can be exported."));
 

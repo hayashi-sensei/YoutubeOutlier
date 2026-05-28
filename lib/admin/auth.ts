@@ -1,8 +1,6 @@
 import { redirect } from "next/navigation";
 import type { UserRole } from "@/generated/prisma/client";
-import { bootstrapUserWorkspace } from "@/lib/auth/bootstrap";
 import { getPrismaClient } from "@/lib/db/prisma";
-import { createClient } from "@/lib/supabase/server";
 
 type RoleRecord = {
   role: UserRole;
@@ -19,16 +17,13 @@ export function assertAdminRole(user: RoleRecord | null): void {
 }
 
 export async function requireAdmin() {
-  const supabase = await createClient();
-  const {
-    data: { user: supabaseUser },
-  } = await supabase.auth.getUser();
+  const { getOptionalUserWorkspace } = await import("@/lib/auth/session");
+  const bootstrap = await getOptionalUserWorkspace();
 
-  if (!supabaseUser) {
+  if (!bootstrap) {
     redirect("/sign-in?next=/app/admin" as never);
   }
 
-  const bootstrap = await bootstrapUserWorkspace(supabaseUser);
   const prisma = getPrismaClient();
   const user = await prisma.user.findUnique({
     where: { id: bootstrap.user.id },

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import {
   generateWorkspaceRepurposing,
   generateWorkspaceScript,
@@ -8,7 +8,7 @@ import {
   saveEditedScriptAsset,
   saveRepurposingToCalendar,
 } from "@/actions/content-workspace";
-import { bootstrapUserWorkspace } from "@/lib/auth/bootstrap";
+import { requireUserWorkspace } from "@/lib/auth/session";
 import { getAiTaskConfig } from "@/lib/ai/task-config";
 import {
   REPURPOSING_FORMAT_LABELS,
@@ -23,7 +23,6 @@ import {
 } from "@/lib/content-workspace/scripts";
 import { AiOperationSubmit } from "@/components/shared/ai-operation-submit";
 import { getPrismaClient } from "@/lib/db/prisma";
-import { createClient } from "@/lib/supabase/server";
 import type { RepurposingFormat, RepurposingSourceType } from "@/schemas/content-generation";
 import { AI_TASK_TYPES } from "@/types/ai";
 import { CONTENT_WORKSPACE_SECTION_TYPES, type ContentWorkspaceEvidenceSnapshot, type ContentWorkspaceSectionType } from "@/types/content-workspace";
@@ -46,26 +45,13 @@ const OPTIONAL_SCRIPT_CONTEXT_LABELS: Record<OptionalScriptContextAssetType, str
 const REPURPOSING_FORMATS = Object.keys(REPURPOSING_FORMAT_LABELS) as RepurposingFormat[];
 const REPURPOSING_SOURCE_TYPES = Object.keys(REPURPOSING_SOURCE_LABELS) as RepurposingSourceType[];
 
-function redirectTo(url: string): never {
-  redirect(url as never);
-}
-
 export default async function SelectedContentWorkspacePage({
   params,
 }: {
   params: Promise<{ contentItemId: string }>;
 }) {
   const { contentItemId } = await params;
-  const supabase = await createClient();
-  const {
-    data: { user: supabaseUser },
-  } = await supabase.auth.getUser();
-
-  if (!supabaseUser) {
-    redirectTo("/sign-in");
-  }
-
-  const { workspaceId } = await bootstrapUserWorkspace(supabaseUser);
+  const { workspaceId } = await requireUserWorkspace(`/app/content-studio/${contentItemId}`);
   const prisma = getPrismaClient();
   const [contentItem, generations] = await Promise.all([
     prisma.contentItem.findFirst({

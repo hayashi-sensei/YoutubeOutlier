@@ -50,6 +50,9 @@ function hasCurrentDelegates(prisma: PrismaClient | undefined): prisma is Prisma
 
   return (
     "competitorBlueprint" in prisma &&
+    "account" in prisma &&
+    "session" in prisma &&
+    "verificationToken" in prisma &&
     "userRoleLimit" in prisma &&
     modelHasFields(prisma, "VisualAsset", [
       "aiGenerationId",

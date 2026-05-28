@@ -57,6 +57,7 @@ Before starting a spec, review and update the [Integration To-Do](./list-to-do.m
 25. [025 Neon Database Migration](./025-neon-database-migration.md)
 26. [026 Auth.js Google OAuth](./026-authjs-google-oauth.md)
 27. [027 Cloudflare R2 Storage](./027-cloudflare-r2-storage.md)
+28. [028 Auth.js Email Password Auth](./028-authjs-email-password.md)
 
 ## Recommended Build Order
 
@@ -78,3 +79,4 @@ Before starting a spec, review and update the [Integration To-Do](./list-to-do.m
 16. Neon database migration
 17. Auth.js Google OAuth
 18. Cloudflare R2 storage
+19. Auth.js email/password auth

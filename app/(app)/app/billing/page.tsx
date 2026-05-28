@@ -1,19 +1,13 @@
-import { bootstrapUserWorkspace } from "@/lib/auth/bootstrap";
+import { requireUserWorkspace } from "@/lib/auth/session";
 import { CREDIT_PACKS, PLAN_DEFINITIONS } from "@/lib/billing/plans";
 import { getPrismaClient } from "@/lib/db/prisma";
-import { createClient } from "@/lib/supabase/server";
 
 const paidPlans = [PLAN_DEFINITIONS.STARTER, PLAN_DEFINITIONS.PRO, PLAN_DEFINITIONS.PREMIUM];
 
 export default async function BillingPage() {
-  const supabase = await createClient();
-  const {
-    data: { user: supabaseUser },
-  } = await supabase.auth.getUser();
-  const bootstrap = supabaseUser ? await bootstrapUserWorkspace(supabaseUser) : null;
+  const bootstrap = await requireUserWorkspace("/app/billing");
   const prisma = getPrismaClient();
-  const [workspace, account] = bootstrap
-    ? await Promise.all([
+  const [workspace, account] = await Promise.all([
         prisma.workspace.findUnique({
         where: { id: bootstrap.workspaceId },
         select: {
@@ -50,8 +44,7 @@ export default async function BillingPage() {
             },
           },
         }),
-      ])
-    : [null, null];
+      ]);
 
   return (
     <main className="p-5 lg:p-8">

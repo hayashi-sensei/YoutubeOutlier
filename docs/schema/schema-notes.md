@@ -33,10 +33,19 @@ Account-level SaaS data:
 - shared credit balance
 - `CreditTransaction`
 - shared calendar view across the user's workspaces
+- Auth.js `Account`, `Session`, and `VerificationToken` records
 
 This matters because many users may track the same competitor. The app should fetch and store that competitor once, then let many workspaces reference it.
 
 Workspaces are separate research accounts under one email login. Each workspace owns its own niche, audience, settings, competitors, industry sources, reports, topic ideas, outlier opportunity context, and competitor blueprints. Credits and calendar visibility are shared across the email account, with workspace filters where useful.
+
+## Auth.js Account Persistence
+
+Spec 026 moves interactive application authentication to Auth.js with Google OAuth. The existing application `User` model remains the user, ownership, role, billing, credit, and workspace identity record; Auth.js `Account` and `Session` rows attach provider credentials and active sessions to that same `User.id`.
+
+First sign-in links by email and then runs the app bootstrap flow to ensure the default workspace, workspace settings, membership, configured admin role, avatar, and display name are present. OAuth provider tokens and session tokens must stay server-only and must not be exposed to client components.
+
+`User.supabaseUserId` is retained as a nullable legacy field for historical migrations and existing data compatibility. New Auth.js sign-ins should not depend on Supabase Auth IDs.
 
 ## Supabase RLS Guidance
 

@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { bootstrapUserWorkspace } from "@/lib/auth/bootstrap";
+import { requireUserWorkspace } from "@/lib/auth/session";
 import { getPrismaClient } from "@/lib/db/prisma";
 import {
   dismissTopicRecommendation as dismissRecommendation,
@@ -15,23 +15,13 @@ import {
   runTopicRecommendationJob,
   type TopicRecommendationRunnerPrisma,
 } from "@/lib/recommendations/runner";
-import { createClient } from "@/lib/supabase/server";
 
 function redirectTo(url: string): never {
   redirect(url as never);
 }
 
 async function getWorkspaceIdOrRedirect(): Promise<string> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirectTo("/sign-in");
-  }
-
-  const { workspaceId } = await bootstrapUserWorkspace(user);
+  const { workspaceId } = await requireUserWorkspace("/app/topic-ideas");
   return workspaceId;
 }
 

@@ -10,14 +10,13 @@ import {
 import { openRecommendationWorkspace } from "@/actions/content-workspace";
 import { BlueprintSummaryPanel } from "@/components/blueprints/blueprint-summary-panel";
 import { AiOperationSubmit } from "@/components/shared/ai-operation-submit";
-import { bootstrapUserWorkspace } from "@/lib/auth/bootstrap";
+import { requireUserWorkspace } from "@/lib/auth/session";
 import { getWorkspaceBlueprintSummaries } from "@/lib/blueprints/queries";
 import { getPrismaClient } from "@/lib/db/prisma";
 import {
   countWorkspaceTopicRecommendations,
   getWorkspaceTopicRecommendations,
 } from "@/lib/recommendations/queries";
-import { createClient } from "@/lib/supabase/server";
 import type { TopicRecommendationSummaryRow } from "@/types/recommendations";
 
 const TOPIC_PAGE_SIZE = 15;
@@ -41,16 +40,7 @@ export default async function TopicIdeasPage({
 }: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const supabase = await createClient();
-  const {
-    data: { user: supabaseUser },
-  } = await supabase.auth.getUser();
-
-  if (!supabaseUser) {
-    redirectTo("/sign-in");
-  }
-
-  const { workspaceId } = await bootstrapUserWorkspace(supabaseUser);
+  const { workspaceId } = await requireUserWorkspace("/app/topic-ideas");
   const prisma = getPrismaClient();
   const params = searchParams ? await searchParams : {};
   const page = positiveIntegerParam(params.page) ?? 1;

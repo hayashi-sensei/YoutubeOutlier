@@ -1,27 +1,23 @@
 import { NextResponse } from "next/server";
-import { bootstrapUserWorkspace } from "@/lib/auth/bootstrap";
+import { getOptionalUserWorkspace } from "@/lib/auth/session";
 import { getPrismaClient } from "@/lib/db/prisma";
 import {
   getReportExportDownload,
   type ReportExportDownloadPrisma,
 } from "@/lib/reports/export-download";
-import { createClient } from "@/lib/supabase/server";
 
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ reportId: string; exportId: string }> },
 ) {
   const { reportId, exportId } = await params;
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const context = await getOptionalUserWorkspace();
 
-  if (!user) {
+  if (!context) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { workspaceId } = await bootstrapUserWorkspace(user);
+  const { workspaceId } = context;
   const download = await getReportExportDownload({
     prisma: getPrismaClient() as unknown as ReportExportDownloadPrisma,
     workspaceId,

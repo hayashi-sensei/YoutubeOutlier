@@ -5,11 +5,10 @@ import { runCompetitorChannelBackfill } from "@/actions/competitors";
 import { openRecommendationWorkspace } from "@/actions/content-workspace";
 import { generateChannelTopicRecommendations } from "@/actions/recommendations";
 import { AiOperationSubmit } from "@/components/shared/ai-operation-submit";
-import { bootstrapUserWorkspace } from "@/lib/auth/bootstrap";
+import { requireUserWorkspace } from "@/lib/auth/session";
 import { getCompetitorChannelIntelligence } from "@/lib/competitors/channel-intelligence";
 import { getPrismaClient } from "@/lib/db/prisma";
 import { getWorkspaceTopicRecommendations } from "@/lib/recommendations/queries";
-import { createClient } from "@/lib/supabase/server";
 import type { TopicRecommendationSummaryRow } from "@/types/recommendations";
 
 function redirectTo(url: string): never {
@@ -72,16 +71,7 @@ export default async function CompetitorIntelligencePage({
   const { trackedChannelId } = await params;
   const query = await searchParams;
   const cachedPage = Math.max(1, Number.parseInt(query.cachedPage ?? "1", 10) || 1);
-  const supabase = await createClient();
-  const {
-    data: { user: supabaseUser },
-  } = await supabase.auth.getUser();
-
-  if (!supabaseUser) {
-    redirectTo("/sign-in");
-  }
-
-  const { workspaceId } = await bootstrapUserWorkspace(supabaseUser);
+  const { workspaceId } = await requireUserWorkspace(`/app/competitors/${trackedChannelId}`);
   const prisma = getPrismaClient();
   const intelligence = await getCompetitorChannelIntelligence(prisma, {
     workspaceId,

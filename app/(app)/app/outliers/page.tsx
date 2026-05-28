@@ -1,19 +1,13 @@
-import { redirect } from "next/navigation";
 import { backfillMissingOutlierScores } from "@/actions/outliers";
 import { Panel } from "@/components/dashboard/panel";
-import { bootstrapUserWorkspace } from "@/lib/auth/bootstrap";
+import { requireUserWorkspace } from "@/lib/auth/session";
 import { getPrismaClient } from "@/lib/db/prisma";
 import { getTopWorkspaceOutliers } from "@/lib/outliers/queries";
-import { createClient } from "@/lib/supabase/server";
 
 type TopOutlierPresentation = Awaited<ReturnType<typeof getTopWorkspaceOutliers>>[number] & {
   thumbnailUrl: string | null;
   channelHandle: string | null;
 };
-
-function redirectTo(url: string): never {
-  redirect(url as never);
-}
 
 function formatCompactNumber(value: number | null | undefined) {
   if (value === null || value === undefined) {
@@ -111,16 +105,7 @@ export default async function OutliersPage({
   }>;
 }) {
   const params = await searchParams;
-  const supabase = await createClient();
-  const {
-    data: { user: supabaseUser },
-  } = await supabase.auth.getUser();
-
-  if (!supabaseUser) {
-    redirectTo("/sign-in");
-  }
-
-  const { workspaceId } = await bootstrapUserWorkspace(supabaseUser);
+  const { workspaceId } = await requireUserWorkspace("/app/outliers");
   const prisma = getPrismaClient();
   const topOutliers = await getTopWorkspaceOutliers(prisma, { workspaceId, limit: 100 });
   const message = backfillMessage(params);

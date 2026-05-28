@@ -1,10 +1,8 @@
-import { redirect } from "next/navigation";
 import { generateVisualImage, generateVisualStrategy } from "@/actions/visual-studio";
 import { getAiTaskConfig } from "@/lib/ai/task-config";
-import { bootstrapUserWorkspace } from "@/lib/auth/bootstrap";
+import { requireUserWorkspace } from "@/lib/auth/session";
 import { getPrismaClient } from "@/lib/db/prisma";
 import { AiOperationSubmit } from "@/components/shared/ai-operation-submit";
-import { createClient } from "@/lib/supabase/server";
 import { visualStrategySchema, type VisualOverlay, type VisualStrategy } from "@/schemas/visual-generation";
 import { AI_TASK_TYPES, type AiQualityTier } from "@/types/ai";
 
@@ -22,26 +20,13 @@ const QUALITY_ROUTES: Array<{ value: AiQualityTier; label: string; note: string 
   { value: "premium", label: "Flux / PiAPI", note: "Premium visual route" },
 ];
 
-function redirectTo(url: string): never {
-  redirect(url as never);
-}
-
 export default async function VisualStudioPage({
   searchParams,
 }: {
   searchParams: Promise<{ contentItemId?: string; strategy?: string; error?: string; generated?: string }>;
 }) {
   const query = await searchParams;
-  const supabase = await createClient();
-  const {
-    data: { user: supabaseUser },
-  } = await supabase.auth.getUser();
-
-  if (!supabaseUser) {
-    redirectTo("/sign-in");
-  }
-
-  const { workspaceId } = await bootstrapUserWorkspace(supabaseUser);
+  const { workspaceId } = await requireUserWorkspace("/app/visual-studio");
   const prisma = getPrismaClient();
   const [contentItems, assets, selectedContentItem] = await Promise.all([
     prisma.contentItem.findMany({

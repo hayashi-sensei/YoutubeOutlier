@@ -3,10 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { AiModelRouterPrisma } from "@/lib/ai/model-router";
-import { bootstrapUserWorkspace } from "@/lib/auth/bootstrap";
+import { requireUserWorkspace } from "@/lib/auth/session";
 import { getPrismaClient } from "@/lib/db/prisma";
 import { createImageRouter } from "@/lib/image/image-router";
-import { createClient } from "@/lib/supabase/server";
 import { buildVisualAssetCreateData } from "@/lib/visual-generation/persistence";
 import type { ImageAspectRatio } from "@/types/ai";
 
@@ -15,16 +14,7 @@ function redirectTo(url: string): never {
 }
 
 async function getWorkspaceContextOrRedirect() {
-  const supabase = await createClient();
-  const {
-    data: { user: supabaseUser },
-  } = await supabase.auth.getUser();
-
-  if (!supabaseUser) {
-    redirectTo("/sign-in");
-  }
-
-  return bootstrapUserWorkspace(supabaseUser);
+  return requireUserWorkspace("/app/visual-studio");
 }
 
 export async function generateVisualAsset(formData: FormData) {

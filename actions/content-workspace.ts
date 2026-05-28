@@ -9,7 +9,7 @@ import {
   generateScriptSectionThroughRouter,
   generateScriptThroughRouter,
 } from "@/lib/ai/tasks/content-generation";
-import { bootstrapUserWorkspace } from "@/lib/auth/bootstrap";
+import { requireUserWorkspace } from "@/lib/auth/session";
 import { saveVersionedContentAsset, type ContentAssetWriterPrisma } from "@/lib/content-workspace/assets";
 import {
   OPTIONAL_SCRIPT_CONTEXT_ASSET_TYPES,
@@ -32,7 +32,6 @@ import {
   type ContentWorkspaceSourcePrisma,
 } from "@/lib/content-workspace/source";
 import { getPrismaClient } from "@/lib/db/prisma";
-import { createClient } from "@/lib/supabase/server";
 import {
   manualContentTopicSchema,
   repurposingFormatSchema,
@@ -45,16 +44,7 @@ function redirectTo(url: string): never {
 }
 
 async function getWorkspaceContextOrRedirect() {
-  const supabase = await createClient();
-  const {
-    data: { user: supabaseUser },
-  } = await supabase.auth.getUser();
-
-  if (!supabaseUser) {
-    redirectTo("/sign-in");
-  }
-
-  return bootstrapUserWorkspace(supabaseUser);
+  return requireUserWorkspace("/app/content-studio");
 }
 
 export async function openRecommendationWorkspace(formData: FormData) {

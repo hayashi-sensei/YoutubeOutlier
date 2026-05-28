@@ -4,6 +4,15 @@ const envSchema = z.object({
   DATABASE_URL: z.string().url().optional(),
   DIRECT_URL: z.string().url().optional(),
   NEXT_PUBLIC_APP_URL: z.string().url().default("http://localhost:3000"),
+  AUTH_SECRET: z.string().min(32).refine((value) => value !== "replace-with-a-long-random-auth-secret", {
+    message: "AUTH_SECRET must be set to a generated secret.",
+  }),
+  AUTH_GOOGLE_ID: z.string().min(1).refine((value) => value !== "your-google-oauth-client-id", {
+    message: "AUTH_GOOGLE_ID must be set to a Google OAuth client ID.",
+  }),
+  AUTH_GOOGLE_SECRET: z.string().min(1).refine((value) => value !== "your-google-oauth-client-secret", {
+    message: "AUTH_GOOGLE_SECRET must be set to a Google OAuth client secret.",
+  }),
   NEXT_PUBLIC_SUPABASE_URL: z.string().url().optional(),
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: z.string().min(1).optional(),
   YOUTUBE_DATA_API_KEY: z.string().min(1).optional(),
@@ -23,6 +32,9 @@ export const env = envSchema.parse({
   DATABASE_URL: process.env.DATABASE_URL,
   DIRECT_URL: process.env.DIRECT_URL,
   NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+  AUTH_SECRET: process.env.AUTH_SECRET,
+  AUTH_GOOGLE_ID: process.env.AUTH_GOOGLE_ID,
+  AUTH_GOOGLE_SECRET: process.env.AUTH_GOOGLE_SECRET,
   NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
   YOUTUBE_DATA_API_KEY: process.env.YOUTUBE_DATA_API_KEY,

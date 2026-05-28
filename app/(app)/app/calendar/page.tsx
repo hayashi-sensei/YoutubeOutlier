@@ -1,11 +1,9 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { createCalendarItem, updateCalendarItem } from "@/actions/calendar";
-import { bootstrapUserWorkspace } from "@/lib/auth/bootstrap";
+import { requireUserWorkspace } from "@/lib/auth/session";
 import { CALENDAR_STATUSES } from "@/lib/calendar/mutations";
 import { getPrismaClient } from "@/lib/db/prisma";
-import { createClient } from "@/lib/supabase/server";
 import type { CalendarStatus } from "@/schemas/calendar";
 
 type CalendarSearchParams = {
@@ -30,25 +28,12 @@ type CalendarItem = {
   assets: Array<{ id: string; assetType: string; title: string | null; version: number }>;
 };
 
-function redirectTo(url: string): never {
-  redirect(url as never);
-}
-
 export default async function CalendarPage({
   searchParams,
 }: {
   searchParams?: Promise<CalendarSearchParams>;
 }) {
-  const supabase = await createClient();
-  const {
-    data: { user: supabaseUser },
-  } = await supabase.auth.getUser();
-
-  if (!supabaseUser) {
-    redirectTo("/sign-in");
-  }
-
-  const { user, workspaceId } = await bootstrapUserWorkspace(supabaseUser);
+  const { user, workspaceId } = await requireUserWorkspace("/app/calendar");
   const prisma = getPrismaClient();
   const params = searchParams ? await searchParams : {};
   const view = params.view === "list" ? "list" : "month";

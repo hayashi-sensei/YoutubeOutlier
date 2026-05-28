@@ -1,4 +1,3 @@
-import { redirect } from "next/navigation";
 import Link from "next/link";
 import {
   deleteFailedResearchReports,
@@ -6,14 +5,9 @@ import {
   generateManualResearchReport,
 } from "@/actions/reports";
 import { GenerateReportSubmit } from "@/components/reports/generate-report-submit";
-import { bootstrapUserWorkspace } from "@/lib/auth/bootstrap";
+import { requireUserWorkspace } from "@/lib/auth/session";
 import { getPrismaClient } from "@/lib/db/prisma";
 import { getWorkspaceResearchReports } from "@/lib/recommendations/queries";
-import { createClient } from "@/lib/supabase/server";
-
-function redirectTo(url: string): never {
-  redirect(url as never);
-}
 
 function formatDate(value: Date | null) {
   if (!value) {
@@ -71,16 +65,7 @@ export default async function ReportsPage({
   searchParams?: Promise<{ deleted?: string; failedDeleted?: string; error?: string }>;
 }) {
   const query = searchParams ? await searchParams : {};
-  const supabase = await createClient();
-  const {
-    data: { user: supabaseUser },
-  } = await supabase.auth.getUser();
-
-  if (!supabaseUser) {
-    redirectTo("/sign-in");
-  }
-
-  const { workspaceId } = await bootstrapUserWorkspace(supabaseUser);
+  const { workspaceId } = await requireUserWorkspace("/app/reports");
   const prisma = getPrismaClient();
   const [reports, latestSourceItems, settings] = await Promise.all([
     getWorkspaceResearchReports(prisma, { workspaceId, limit: 8 }),
