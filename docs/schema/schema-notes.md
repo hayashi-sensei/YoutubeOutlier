@@ -81,13 +81,15 @@ Workspace storage objects should use a path shape beginning with `workspaces/{wo
 
 `YOUTUBE_DATA_API_KEY` is optional so local development and tests can use mocked providers. Real ingestion jobs must fail fast when no API key is configured instead of attempting live YouTube requests.
 
-## Prisma And Supabase Notes
+## Prisma And Neon Notes
 
-Prisma is useful for app queries and migrations, but Supabase Auth creates users in `auth.users`, not the Prisma `User` model. The app should create/sync an application user profile after OAuth login.
+Prisma is the application ORM and migration boundary. Neon Postgres is the database host for runtime queries and migrations.
 
-If using Supabase Auth directly, decide whether the `User.id` should mirror `auth.users.id` as UUID. The starter schema uses `cuid()` for portability. For a real Supabase Auth integration, consider switching user IDs to UUIDs.
+`DATABASE_URL` must use Neon's pooled connection string for application runtime. `DIRECT_URL` must use Neon's direct non-pooled connection string for migrations and schema operations. Keep both values server-only and never expose them through `NEXT_PUBLIC_*`.
 
-Production app code should reuse one Prisma client and a bounded Postgres pool per runtime instance. Serverless deployments must use the Supabase pooler-compatible `DATABASE_URL` and keep direct database URLs for migrations only, otherwise concurrent page requests and job invocations can exhaust Postgres connections before application CPU becomes the bottleneck.
+Production app code should reuse one Prisma client and a bounded Postgres pool per runtime instance. Serverless deployments must use the Neon pooled `DATABASE_URL` and keep direct database URLs for migrations only, otherwise concurrent page requests and job invocations can exhaust Postgres connections before application CPU becomes the bottleneck.
+
+Early migrations were written while Supabase Auth/RLS roles were present. The repo migration runner keeps those migration files immutable and adapts Supabase role grants/revokes at execution time when running against plain Neon Postgres. On databases without `auth.uid()`, it installs a null-returning compatibility shim so historical RLS helper functions can be created until Spec 026 replaces Supabase Auth with Auth.js.
 
 Scale-readiness indexes in migration `0028_scale_readiness_indexes` support bounded scheduler discovery, queued job claiming, dashboard job status aggregation, scheduled topic expiry, and transcript queue scans. Add new dashboard, job, or admin list queries with matching indexes instead of relying on unbounded scans.
 

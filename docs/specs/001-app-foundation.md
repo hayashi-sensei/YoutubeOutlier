@@ -12,7 +12,7 @@ Complete.
 - Added basic app shell, dashboard foundation, route stubs, error boundary, and not-found page.
 - Added `/api/health` with app and database connectivity checks.
 - Added environment files, Prisma 7 configuration, generated Prisma client output, and a baseline migration.
-- Connected Prisma runtime to Supabase Postgres through `@prisma/adapter-pg` and `pg` with SSL.
+- Connected Prisma runtime to Postgres through `@prisma/adapter-pg` and `pg` with SSL. Spec 025 later moves the hosted database target to Neon Postgres.
 
 ## Verification
 
@@ -40,7 +40,7 @@ Create the baseline Next.js SaaS application structure for YTResearch.
 - Next.js App Router project
 - TypeScript
 - Tailwind or equivalent styling
-- Prisma connected to Supabase Postgres
+- Prisma connected to Postgres
 - Environment variable management
 - Basic app shell
 - Dashboard route structure

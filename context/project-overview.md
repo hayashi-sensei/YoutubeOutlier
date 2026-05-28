@@ -753,7 +753,7 @@ AI SDK:          Vercel AI SDK
 AI Gateway:      Vercel AI Gateway for observability and routing
 CSS/UI:          Tailwind CSS + shadcn/ui
 Storage:         Cloudflare R2 object storage
-Vector Search:   pgvector in Supabase
+Vector Search:   pgvector in Neon Postgres, when needed
 Payments:        Stripe
 Email:           Resend + React Email
 Jobs:            Inngest or Trigger.dev
@@ -789,7 +789,7 @@ Image:
 All schema changes should use migrations.
 Do not make untracked production schema changes.
 Do not expose service role keys to the client.
-RLS must be enabled for exposed Supabase tables.
+RLS or equivalent server-side access control must protect exposed user-owned tables.
 ```
 
 ---

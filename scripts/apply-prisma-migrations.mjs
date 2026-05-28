@@ -3,12 +3,15 @@ import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 import pg from "pg";
+import { adaptMigrationSqlForCapabilities, ensureAuthUidShim, loadDatabaseCapabilities } from "./migration-sql-compat.mjs";
 
 const migrationsDir = path.resolve("prisma/migrations");
 const connectionString = process.env.DIRECT_URL || process.env.DATABASE_URL;
 
 if (!connectionString) {
-  throw new Error("DIRECT_URL or DATABASE_URL is required.");
+  throw new Error(
+    "DIRECT_URL or DATABASE_URL is required. For Neon, set DIRECT_URL to the direct non-pooled connection string for migrations and DATABASE_URL to the pooled runtime connection string.",
+  );
 }
 
 const pool = new pg.Pool({
@@ -38,6 +41,8 @@ function checksum(sql) {
 const client = await pool.connect();
 
 try {
+  const capabilities = await loadDatabaseCapabilities(client);
+  await ensureAuthUidShim(client, capabilities);
   await client.query(migrationTableSql);
 
   const appliedResult = await client.query('SELECT "migration_name" FROM "_prisma_migrations" WHERE "rolled_back_at" IS NULL');
@@ -55,7 +60,8 @@ try {
     }
 
     const sqlPath = path.join(migrationsDir, migrationName, "migration.sql");
-    const sql = await fs.readFile(sqlPath, "utf8");
+    const sourceSql = await fs.readFile(sqlPath, "utf8");
+    const sql = adaptMigrationSqlForCapabilities(sourceSql, capabilities);
 
     console.log(`apply ${migrationName}`);
     await client.query("BEGIN");
@@ -64,7 +70,7 @@ try {
       await client.query(
         `INSERT INTO "_prisma_migrations" ("id", "checksum", "finished_at", "migration_name", "logs", "rolled_back_at", "started_at", "applied_steps_count")
          VALUES ($1, $2, now(), $3, NULL, NULL, now(), 1)`,
-        [crypto.randomUUID(), checksum(sql), migrationName],
+        [crypto.randomUUID(), checksum(sourceSql), migrationName],
       );
       await client.query("COMMIT");
     } catch (error) {

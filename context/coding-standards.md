@@ -189,14 +189,14 @@ Rules:
 
 ## 7. Database And Prisma
 
-- Supabase Postgres is the database host.
+- Neon Postgres is the database host.
 - Prisma is the ORM and migration tool.
 - All schema changes go through migrations.
 - Never use `prisma db push` for this project.
 - Never make untracked production schema changes.
 - Never edit applied migration files.
-- Use `prisma migrate dev` in development.
-- Use `prisma migrate deploy` in production.
+- Use the repo migration workflow with Neon's direct non-pooled `DIRECT_URL` for migration execution.
+- Use Neon's pooled `DATABASE_URL` for application runtime.
 - Use `@default(cuid())` unless the auth integration requires UUID alignment.
 - Add `createdAt` and `updatedAt` to mutable application tables.
 - Use indexes for dashboard, report, job, and usage queries.
@@ -212,7 +212,7 @@ Important:
 
 ---
 
-## 8. Supabase Security And RLS
+## 8. Database Security And RLS
 
 - Enable RLS on all exposed tables.
 - User-owned tables must be scoped by workspace membership.
@@ -220,7 +220,7 @@ Important:
 - Do not expose service role, secret keys, provider API keys, or webhook secrets to the browser.
 - Admin access must use server-controlled role data, not user-editable metadata.
 - Storage objects must be scoped by workspace/user.
-- Views exposed through Supabase must not bypass RLS unintentionally.
+- Views exposed directly to browser-authenticated clients must not bypass RLS unintentionally.
 
 RLS applies especially to:
 

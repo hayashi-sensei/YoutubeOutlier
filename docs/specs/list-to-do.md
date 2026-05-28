@@ -4,9 +4,9 @@ Use this checklist at the start of each spec. Mark an item when the current spec
 
 ## Core Platform
 
-- [x] Supabase Postgres through Prisma runtime
-  - Specs: [001 App Foundation](./001-app-foundation.md)
-  - Notes: Runtime connectivity is in place; schema hardening continues through later specs.
+- [x] Neon Postgres through Prisma runtime
+  - Specs: [001 App Foundation](./001-app-foundation.md), [025 Neon Database Migration](./025-neon-database-migration.md)
+  - Notes: Runtime connectivity uses the pooled `DATABASE_URL`; migrations use the direct `DIRECT_URL`.
 - [x] Supabase Auth
   - Specs: [002 Auth And User Settings](./002-auth-and-user-settings.md)
   - Notes: Email/password and Google OAuth flows are wired through Supabase.

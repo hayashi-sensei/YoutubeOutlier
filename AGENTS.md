@@ -26,7 +26,8 @@ This is the only workflow. Do not deviate. LOAD SPEC -> PLAN -> AWAIT APPROVAL -
 - **NEVER** edit migration files after creation
 - Use the repo's Prisma camelCase field naming (`userId`, `workspaceId`, `ownerId`) and preserve existing database mappings.
 - `@default(cuid())` for all primary keys
-- Use `npm run db:migrate:pg` for the current local Postgres migration workflow unless the repo scripts are intentionally changed.
+- Use `npm run db:migrate:pg` for the Neon/Postgres migration workflow unless the repo scripts are intentionally changed.
+- `DATABASE_URL` is the Neon pooled runtime connection string; `DIRECT_URL` is the Neon direct non-pooled migration connection string.
 - Production migration execution must use a deploy-safe migration flow.
 
 ### Code
@@ -129,7 +130,7 @@ npm run db:migrate:pg
 - `npm run prisma:generate` regenerates the Prisma client under `generated/prisma`.
 - `npm run db:migrate:pg` applies Prisma migrations using `scripts/apply-prisma-migrations.mjs`.
 
-The project expects a local `.env` file for database, Supabase, cron, provider, and email configuration. Keep `.env` private; `.env.example` is the committed template.
+The project expects a local `.env` file for Neon database, Supabase/Auth transition, cron, provider, storage, and email configuration. Keep `.env` private; `.env.example` is the committed template.
 
 ## Coding Style & Naming Conventions
 
