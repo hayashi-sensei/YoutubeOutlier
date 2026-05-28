@@ -170,7 +170,7 @@ Spec 014 content workspaces use `ContentItem` as the selected-topic workspace. `
 
 `VisualAsset` stores both strategy-only concepts and generated image variants. Strategy rows use the local `visual-strategy-v1` provider with no `imageUrl`; generated variants link back to the triggering `AiGeneration` through `aiGenerationId`, preserve the generated prompt, provider/model, aspect ratio, dimensions, estimated cost, editable overlay JSON, and a traceable `storagePath`.
 
-Editable overlay text remains structured in `editableOverlays` so thumbnail headlines, quote text, and diagram labels can be edited after image generation instead of being baked into provider-rendered pixels. Until external object storage is configured, generated previews may be stored as data URLs in `imageUrl`; production storage should move binary image data to Supabase Storage or S3-compatible storage and keep `storagePath` as the object key.
+Editable overlay text remains structured in `editableOverlays` so thumbnail headlines, quote text, and diagram labels can be edited after image generation instead of being baked into provider-rendered pixels. Until external object storage is configured, generated previews may be stored as data URLs in `imageUrl`; production storage should move binary image data to Cloudflare R2 and keep `storagePath` as the object key.
 
 ## Transcript Storage
 
