@@ -79,18 +79,18 @@ Use this checklist at the start of each spec. Mark an item when the current spec
 
 ## Content And Delivery
 
-- [ ] Asset storage
+- [x] Asset storage
   - Specs: [016 Visual Generation Studio](./016-visual-generation-studio.md), [020 PDF DOCX Exports](./020-pdf-docx-exports.md)
-  - Notes: Spec 016 saves visual metadata, editable overlays, generated preview data URLs, and traceable `storagePath` values on `VisualAsset`. External Supabase Storage or S3-compatible object upload remains unticked until production storage credentials and bucket policy are configured.
+  - Notes: Spec 027 adds the Cloudflare R2 server-side storage boundary, S3-compatible adapter, object-key validation, report export storage integration, and visual binary upload integration. Live environments still need the R2 bucket credentials and optional public base URL configured.
 - [ ] Calendar integration inside the app
   - Specs: [018 Content Calendar](./018-content-calendar.md)
   - Notes: Internal content calendar, not external Google Calendar unless explicitly added later.
 - [ ] PDF export
   - Specs: [020 PDF DOCX Exports](./020-pdf-docx-exports.md)
-  - Notes: Spec 020 adds branded PDF rendering, background `export_generate` jobs, access-controlled expiring download links, and local file persistence under `outputs/report_exports`. Keep unchecked until production object storage is configured.
+  - Notes: Spec 020 adds branded PDF rendering and background `export_generate` jobs. Spec 027 stores generated PDFs through the storage adapter and serves access-controlled downloads by reading the validated object key.
 - [ ] DOCX export
   - Specs: [020 PDF DOCX Exports](./020-pdf-docx-exports.md)
-  - Notes: Spec 020 adds branded DOCX rendering, background `export_generate` jobs, access-controlled expiring download links, and local file persistence under `outputs/report_exports`. Keep unchecked until production object storage is configured.
+  - Notes: Spec 020 adds branded DOCX rendering and background `export_generate` jobs. Spec 027 stores generated DOCX files through the storage adapter and serves access-controlled downloads by reading the validated object key.
 - [x] Resend email delivery
   - Specs: [021 Email Notifications](./021-email-notifications.md)
   - Notes: Spec 021 adds a Resend-backed app email boundary using `RESEND_API_KEY` and `RESEND_FROM_EMAIL` or `EMAIL_FROM`, logs every delivery attempt to `EmailLog`, sends daily report emails only when report preferences are enabled, and sends export-ready notifications from the export job. Auth emails can still use Supabase SMTP.

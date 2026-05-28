@@ -1,5 +1,3 @@
-import { mkdir, writeFile as writeFileToDisk } from "node:fs/promises";
-import path from "node:path";
 import {
   parseReportExportFileType,
   renderResearchReportDocx,
@@ -14,16 +12,9 @@ import {
   getWorkspaceResearchReportDetail,
   type ResearchReportDetailPrisma,
 } from "./queries";
+import { getStorageAdapter, type StorageAdapter } from "@/lib/storage";
 
 const EXPORT_TTL_DAYS = 7;
-
-export type ReportExportWriterInput = {
-  storagePath: string;
-  contentType: string;
-  body: Buffer;
-};
-
-export type ReportExportWriter = (input: ReportExportWriterInput) => Promise<void>;
 
 export type ReportExportRunnerPrisma = ResearchReportDetailPrisma & {
   workspace: {
@@ -83,7 +74,7 @@ export async function runReportExportJob(input: {
   reportId: string;
   fileType: ReportExportFileType | string;
   now?: Date;
-  writeFile?: ReportExportWriter;
+  storage?: StorageAdapter;
   createExportId?: () => string;
 }): Promise<ReportExportRunSummary> {
   const fileType = parseReportExportFileType(input.fileType);
@@ -140,8 +131,8 @@ export async function runReportExportJob(input: {
     : renderResearchReportDocx(report, branding);
   const expiresAt = new Date(now.getTime() + EXPORT_TTL_DAYS * 24 * 60 * 60 * 1000);
 
-  await (input.writeFile ?? writeLocalExportFile)({
-    storagePath,
+  await (input.storage ?? getStorageAdapter()).putObject({
+    key: storagePath,
     contentType: reportExportContentType(fileType),
     body,
   });
@@ -167,12 +158,6 @@ export async function runReportExportJob(input: {
     storagePath,
     expiresAt: expiresAt.toISOString(),
   };
-}
-
-async function writeLocalExportFile(input: ReportExportWriterInput): Promise<void> {
-  const absolutePath = path.join(process.cwd(), "outputs", "report_exports", input.storagePath);
-  await mkdir(path.dirname(absolutePath), { recursive: true });
-  await writeFileToDisk(absolutePath, input.body);
 }
 
 function createExportId(): string {

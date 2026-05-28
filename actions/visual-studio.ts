@@ -12,6 +12,7 @@ import {
   visualAssetDimensions,
   visualAssetStoragePath,
 } from "@/lib/visual-generation/strategy";
+import { persistVisualAssetFile } from "@/lib/visual-generation/persistence";
 import { visualAspectRatioSchema, visualStrategyInputSchema, visualStrategySchema } from "@/schemas/visual-generation";
 import type { AiQualityTier } from "@/types/ai";
 import type { BuildVisualStrategyInput, VisualAssetTypeInput, VisualStrategy } from "@/types/visual-generation";
@@ -182,6 +183,15 @@ export async function generateVisualImage(formData: FormData) {
     },
     onSuccessTransaction: async ({ generationId, provider, model, costUsd, files, transaction }) => {
       const firstFile = files[0];
+      const persistedFile = firstFile
+        ? await persistVisualAssetFile({
+            workspaceId,
+            contentItemId: strategyAsset.contentItemId,
+            assetType: strategyAsset.assetType,
+            generationId,
+            file: firstFile,
+          })
+        : null;
       const tx = transaction as VisualAssetTransaction;
       await tx.visualAsset.create({
         data: {
@@ -195,8 +205,8 @@ export async function generateVisualImage(formData: FormData) {
           prompt: strategyAsset.prompt,
           visualStrategy: parsedStrategy.data,
           editableOverlays: parsedStrategy.data.editableOverlays,
-          imageUrl: dataUrlFromImageFile(firstFile),
-          storagePath: visualAssetStoragePath({
+          imageUrl: persistedFile?.imageUrl ?? dataUrlFromImageFile(firstFile),
+          storagePath: persistedFile?.storagePath ?? visualAssetStoragePath({
             workspaceId,
             contentItemId: strategyAsset.contentItemId,
             assetType: strategyAsset.assetType,
