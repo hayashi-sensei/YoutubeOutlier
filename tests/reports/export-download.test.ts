@@ -1,12 +1,19 @@
 import { describe, expect, test, vi } from "vitest";
 
 import { getReportExportDownload } from "../../lib/reports/export-download";
+import { createMemoryStorageAdapter } from "../../lib/storage/memory-adapter";
 
 const NOW = new Date("2026-05-19T00:00:00Z");
 
 describe("getReportExportDownload", () => {
   test("loads an unexpired workspace export and reads its file body", async () => {
-    const readFile = vi.fn(async () => Buffer.from("pdf-body"));
+    const storage = createMemoryStorageAdapter();
+    await storage.putObject({
+      key: "exports/workspace-1/report-1/export-1.pdf",
+      contentType: "application/pdf",
+      body: Buffer.from("pdf-body"),
+    });
+    const getObject = vi.spyOn(storage, "getObject");
     const prisma = {
       exportFile: {
         findFirst: vi.fn(async () => ({
@@ -26,7 +33,7 @@ describe("getReportExportDownload", () => {
       reportId: "report-1",
       exportId: "export-1",
       now: NOW,
-      readFile,
+      storage,
     });
 
     expect(prisma.exportFile.findFirst).toHaveBeenCalledWith({
@@ -44,7 +51,7 @@ describe("getReportExportDownload", () => {
         report: { select: { title: true } },
       },
     });
-    expect(readFile).toHaveBeenCalledWith("exports/workspace-1/report-1/export-1.pdf");
+    expect(getObject).toHaveBeenCalledWith({ key: "exports/workspace-1/report-1/export-1.pdf" });
     expect(result).toEqual({
       body: Buffer.from("pdf-body"),
       contentType: "application/pdf",
@@ -53,7 +60,8 @@ describe("getReportExportDownload", () => {
   });
 
   test("returns null for expired exports", async () => {
-    const readFile = vi.fn();
+    const storage = createMemoryStorageAdapter();
+    const getObject = vi.spyOn(storage, "getObject");
     const prisma = {
       exportFile: {
         findFirst: vi.fn(async () => ({
@@ -73,15 +81,16 @@ describe("getReportExportDownload", () => {
       reportId: "report-1",
       exportId: "export-1",
       now: NOW,
-      readFile,
+      storage,
     });
 
     expect(result).toBeNull();
-    expect(readFile).not.toHaveBeenCalled();
+    expect(getObject).not.toHaveBeenCalled();
   });
 
   test("rejects stored export paths outside the workspace export prefix", async () => {
-    const readFile = vi.fn(async () => Buffer.from("secret"));
+    const storage = createMemoryStorageAdapter();
+    const getObject = vi.spyOn(storage, "getObject");
     const prisma = {
       exportFile: {
         findFirst: vi.fn(async () => ({
@@ -101,10 +110,10 @@ describe("getReportExportDownload", () => {
       reportId: "report-1",
       exportId: "export-1",
       now: NOW,
-      readFile,
+      storage,
     });
 
     expect(result).toBeNull();
-    expect(readFile).not.toHaveBeenCalled();
+    expect(getObject).not.toHaveBeenCalled();
   });
 });

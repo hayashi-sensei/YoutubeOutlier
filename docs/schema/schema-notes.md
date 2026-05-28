@@ -80,7 +80,7 @@ Admin/operational tables such as `PlanLimit`, `UserRoleLimit`, `AiTaskRouteOverr
 
 Never expose Supabase service role keys in client code.
 
-Workspace storage objects should use a path shape beginning with `workspaces/{workspaceId}/...`; storage policies should verify the workspace prefix against `yt_app.is_workspace_member`. The storage policy block must run with a role allowed to manage `storage.objects`; privilege failures should stop migration instead of silently leaving storage unscoped. Local export downloads also validate that persisted `ExportFile.storagePath` stays under `exports/{workspaceId}/{reportId}/` before reading from disk.
+Workspace-owned binary objects are stored through the server-only Cloudflare R2 adapter boundary, not through browser-direct storage APIs. Persisted object keys must remain workspace scoped, such as `exports/{workspaceId}/{reportId}/{exportId}.pdf` for report exports and `visual-assets/{workspaceId}/.../{generationId}.png` for generated visuals. Download routes validate the expected workspace/report prefix before reading from storage so a persisted `storagePath` cannot traverse directories or cross workspace boundaries.
 
 ## YouTube Ingestion Freshness And Quota
 
@@ -181,7 +181,7 @@ Spec 014 content workspaces use `ContentItem` as the selected-topic workspace. `
 
 `VisualAsset` stores both strategy-only concepts and generated image variants. Strategy rows use the local `visual-strategy-v1` provider with no `imageUrl`; generated variants link back to the triggering `AiGeneration` through `aiGenerationId`, preserve the generated prompt, provider/model, aspect ratio, dimensions, estimated cost, editable overlay JSON, and a traceable `storagePath`.
 
-Editable overlay text remains structured in `editableOverlays` so thumbnail headlines, quote text, and diagram labels can be edited after image generation instead of being baked into provider-rendered pixels. Until external object storage is configured, generated previews may be stored as data URLs in `imageUrl`; production storage should move binary image data to Cloudflare R2 and keep `storagePath` as the object key.
+Editable overlay text remains structured in `editableOverlays` so thumbnail headlines, quote text, and diagram labels can be edited after image generation instead of being baked into provider-rendered pixels. Generated image binaries are uploaded server-side through the storage adapter; `storagePath` stores the stable R2 object key, while `imageUrl` is populated only from the configured public R2 base URL when one is available.
 
 ## Transcript Storage
 

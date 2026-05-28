@@ -1,11 +1,10 @@
-import { readFile as readFileFromDisk } from "node:fs/promises";
-import path from "node:path";
 import {
   parseReportExportFileType,
   reportExportContentType,
   reportExportFilename,
   type ReportExportFileType,
 } from "./export";
+import { assertObjectKeyHasPrefix, getStorageAdapter, type StorageAdapter } from "@/lib/storage";
 
 export type ReportExportDownloadPrisma = {
   exportFile: {
@@ -40,7 +39,7 @@ export async function getReportExportDownload(input: {
   reportId: string;
   exportId: string;
   now?: Date;
-  readFile?: (storagePath: string) => Promise<Buffer>;
+  storage?: StorageAdapter;
 }): Promise<{ body: Buffer; contentType: string; filename: string } | null> {
   const exportFile = await input.prisma.exportFile.findFirst({
     where: {
@@ -66,7 +65,7 @@ export async function getReportExportDownload(input: {
     return null;
   }
 
-  const body = await (input.readFile ?? readLocalExportFile)(exportFile.storagePath);
+  const body = (await (input.storage ?? getStorageAdapter()).getObject({ key: exportFile.storagePath })).body;
   return {
     body,
     contentType: reportExportContentType(fileType),
@@ -74,20 +73,15 @@ export async function getReportExportDownload(input: {
   };
 }
 
-async function readLocalExportFile(storagePath: string): Promise<Buffer> {
-  return readFileFromDisk(path.join(process.cwd(), "outputs", "report_exports", storagePath));
-}
-
 function isExpired(expiresAt: Date | null, now: Date): boolean {
   return expiresAt !== null && expiresAt.getTime() <= now.getTime();
 }
 
 function isWorkspaceExportPath(storagePath: string, workspaceId: string, reportId: string): boolean {
-  const expectedPrefix = `exports/${workspaceId}/${reportId}/`;
-  const normalized = storagePath.replaceAll("\\", "/");
-  return (
-    normalized.startsWith(expectedPrefix) &&
-    !normalized.includes("../") &&
-    !path.isAbsolute(normalized)
-  );
+  try {
+    assertObjectKeyHasPrefix(storagePath, `exports/${workspaceId}/${reportId}/`);
+    return true;
+  } catch {
+    return false;
+  }
 }

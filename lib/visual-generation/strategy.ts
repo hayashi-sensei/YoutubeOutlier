@@ -6,6 +6,7 @@ import type {
   VisualOverlay,
   VisualStrategy,
 } from "@/types/visual-generation";
+import { buildVisualAssetObjectKey } from "@/lib/storage/keys";
 
 const ASSET_TYPE_LABELS: Record<VisualAssetTypeInput, string> = {
   YOUTUBE_THUMBNAIL: "YouTube thumbnail",
@@ -75,9 +76,7 @@ export function visualAssetStoragePath(input: {
   generationId: string;
   mediaType?: string | null;
 }): string {
-  const extension = mediaTypeExtension(input.mediaType);
-  const contentSegment = input.contentItemId ? `content-items/${input.contentItemId}` : "standalone";
-  return `visual-assets/${input.workspaceId}/${contentSegment}/${input.assetType.toLowerCase()}/${input.generationId}.${extension}`;
+  return buildVisualAssetObjectKey(input);
 }
 
 export function dataUrlFromImageFile(file: { mediaType: string; base64: string } | undefined): string | null {
@@ -215,16 +214,6 @@ function evidenceSummary(value: unknown): string {
     .filter(Boolean)
     .map((item) => compactText(String(item)))
     .join(" | ");
-}
-
-function mediaTypeExtension(mediaType?: string | null): string {
-  if (mediaType === "image/jpeg") {
-    return "jpg";
-  }
-  if (mediaType === "image/webp") {
-    return "webp";
-  }
-  return "png";
 }
 
 function compactText(value: string): string {

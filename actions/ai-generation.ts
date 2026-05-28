@@ -6,7 +6,7 @@ import type { AiModelRouterPrisma } from "@/lib/ai/model-router";
 import { requireUserWorkspace } from "@/lib/auth/session";
 import { getPrismaClient } from "@/lib/db/prisma";
 import { createImageRouter } from "@/lib/image/image-router";
-import { buildVisualAssetCreateData } from "@/lib/visual-generation/persistence";
+import { buildStoredVisualAssetCreateData } from "@/lib/visual-generation/persistence";
 import type { ImageAspectRatio } from "@/types/ai";
 
 function redirectTo(url: string): never {
@@ -39,8 +39,9 @@ export async function generateVisualAsset(formData: FormData) {
   }
 
   await prisma.visualAsset.create({
-    data: buildVisualAssetCreateData({
+    data: await buildStoredVisualAssetCreateData({
       workspaceId,
+      generationId: result.generationId,
       aspectRatio,
       prompt,
       result,

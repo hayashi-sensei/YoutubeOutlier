@@ -1,5 +1,6 @@
 import { deflateRawSync } from "node:zlib";
 import type { ResearchReportDetail } from "./queries";
+import { buildReportExportObjectKey } from "@/lib/storage/keys";
 
 export type ReportExportFileType = "pdf" | "docx";
 
@@ -131,7 +132,7 @@ export function reportExportStoragePath(input: {
   exportId: string;
   fileType: ReportExportFileType;
 }): string {
-  return `exports/${input.workspaceId}/${input.reportId}/${input.exportId}.${input.fileType}`;
+  return buildReportExportObjectKey(input);
 }
 
 export function reportExportDownloadUrl(input: { reportId: string; exportId: string }): string {

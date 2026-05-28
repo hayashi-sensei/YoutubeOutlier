@@ -1,12 +1,14 @@
 import { describe, expect, test, vi } from "vitest";
 
 import { runReportExportJob } from "../../lib/reports/export-runner";
+import { createMemoryStorageAdapter } from "../../lib/storage/memory-adapter";
 
 const NOW = new Date("2026-05-19T00:00:00Z");
 
 describe("runReportExportJob", () => {
   test("renders and stores a workspace-scoped PDF export", async () => {
-    const writeFile = vi.fn(async () => undefined);
+    const storage = createMemoryStorageAdapter();
+    const putObject = vi.spyOn(storage, "putObject");
     const prisma = prismaFixture();
 
     const summary = await runReportExportJob({
@@ -15,13 +17,13 @@ describe("runReportExportJob", () => {
       reportId: "report-1",
       fileType: "pdf",
       now: NOW,
-      writeFile,
+      storage,
       createExportId: () => "export-1",
     });
 
-    expect(writeFile).toHaveBeenCalledWith(
+    expect(putObject).toHaveBeenCalledWith(
       expect.objectContaining({
-        storagePath: expect.stringMatching(/^exports\/workspace-1\/report-1\/export-/),
+        key: expect.stringMatching(/^exports\/workspace-1\/report-1\/export-/),
         contentType: "application/pdf",
       }),
     );
@@ -57,7 +59,7 @@ describe("runReportExportJob", () => {
         reportId: "report-1",
         fileType: "docx",
         now: NOW,
-        writeFile: vi.fn(),
+        storage: createMemoryStorageAdapter(),
       }),
     ).rejects.toThrow("Only completed reports can be exported.");
   });
