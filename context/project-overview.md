@@ -3,7 +3,7 @@
 > **Status:** Product Definition / Pre-Build Specification
 > **Target Launch:** TBD
 > **Owner:** Founder / YTResearch
-> **Primary Stack:** Next.js, Supabase, Prisma, Vercel, Stripe, Resend, Vercel AI SDK
+> **Primary Stack:** Next.js, Neon Postgres, Auth.js, Prisma, Cloudflare R2, Vercel, Stripe, Resend, Vercel AI SDK
 
 ---
 
@@ -747,12 +747,12 @@ created_at       DateTime  default(now())
 
 ```text
 Framework:       Next.js App Router + React + TypeScript
-Database:        Supabase PostgreSQL + Prisma ORM
-Auth:            Supabase Auth or Auth.js with Google OAuth
+Database:        Neon Postgres + Prisma ORM
+Auth:            Auth.js with Google OAuth
 AI SDK:          Vercel AI SDK
 AI Gateway:      Vercel AI Gateway for observability and routing
 CSS/UI:          Tailwind CSS + shadcn/ui
-Storage:         Supabase Storage or S3-compatible storage
+Storage:         Cloudflare R2 object storage
 Vector Search:   pgvector in Supabase
 Payments:        Stripe
 Email:           Resend + React Email

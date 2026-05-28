@@ -10,6 +10,13 @@ const envSchema = z.object({
   YOUTUBE_DAILY_QUOTA_LIMIT: z.coerce.number().int().positive().default(9000),
   YTRESEARCH_DAILY_AI_SPEND_ALERT_USD: z.coerce.number().positive().default(25),
   YTRESEARCH_JOBS_SECRET: z.string().min(12).optional(),
+  CLOUDFLARE_R2_ACCOUNT_ID: z.string().min(1).optional(),
+  CLOUDFLARE_R2_ENDPOINT: z.string().url().optional(),
+  CLOUDFLARE_R2_BUCKET_NAME: z.string().min(1).optional(),
+  CLOUDFLARE_R2_REGION: z.string().min(1).default("auto"),
+  CLOUDFLARE_R2_ACCESS_KEY_ID: z.string().min(1).optional(),
+  CLOUDFLARE_R2_SECRET_ACCESS_KEY: z.string().min(1).optional(),
+  CLOUDFLARE_R2_PUBLIC_BASE_URL: z.string().url().optional(),
 });
 
 export const env = envSchema.parse({
@@ -22,4 +29,11 @@ export const env = envSchema.parse({
   YOUTUBE_DAILY_QUOTA_LIMIT: process.env.YOUTUBE_DAILY_QUOTA_LIMIT,
   YTRESEARCH_DAILY_AI_SPEND_ALERT_USD: process.env.YTRESEARCH_DAILY_AI_SPEND_ALERT_USD,
   YTRESEARCH_JOBS_SECRET: process.env.YTRESEARCH_JOBS_SECRET,
+  CLOUDFLARE_R2_ACCOUNT_ID: process.env.CLOUDFLARE_R2_ACCOUNT_ID,
+  CLOUDFLARE_R2_ENDPOINT: process.env.CLOUDFLARE_R2_ENDPOINT,
+  CLOUDFLARE_R2_BUCKET_NAME: process.env.CLOUDFLARE_R2_BUCKET_NAME,
+  CLOUDFLARE_R2_REGION: process.env.CLOUDFLARE_R2_REGION,
+  CLOUDFLARE_R2_ACCESS_KEY_ID: process.env.CLOUDFLARE_R2_ACCESS_KEY_ID,
+  CLOUDFLARE_R2_SECRET_ACCESS_KEY: process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY,
+  CLOUDFLARE_R2_PUBLIC_BASE_URL: process.env.CLOUDFLARE_R2_PUBLIC_BASE_URL,
 });
