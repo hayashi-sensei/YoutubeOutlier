@@ -1,0 +1,409 @@
+@import "tailwindcss";
+
+@theme {
+  --color-yt-bg: var(--yt-bg);
+  --color-yt-surface: var(--yt-surface);
+  --color-yt-surface-soft: var(--yt-surface-soft);
+  --color-yt-surface-muted: var(--yt-surface-muted);
+  --color-yt-border: var(--yt-border);
+  --color-yt-border-strong: var(--yt-border-strong);
+  --color-yt-primary: var(--yt-primary);
+  --color-yt-primary-hover: var(--yt-primary-hover);
+  --color-yt-primary-soft: var(--yt-primary-soft);
+  --color-yt-blue: var(--yt-blue);
+  --color-yt-blue-soft: var(--yt-blue-soft);
+  --color-yt-navy: var(--yt-navy);
+  --color-yt-success: var(--yt-success);
+  --color-yt-success-soft: var(--yt-success-soft);
+  --color-yt-warning: var(--yt-warning);
+  --color-yt-warning-soft: var(--yt-warning-soft);
+  --color-yt-danger: var(--yt-danger);
+  --color-yt-danger-soft: var(--yt-danger-soft);
+  --color-yt-text: var(--yt-text);
+  --color-yt-text-secondary: var(--yt-text-secondary);
+  --color-yt-text-muted: var(--yt-text-muted);
+  --color-yt-text-faint: var(--yt-text-faint);
+  --color-yt-text-inverse: var(--yt-text-inverse);
+  --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+:root {
+  --yt-bg: #f8fafc;
+  --yt-surface: #ffffff;
+  --yt-surface-soft: #f2f4f7;
+  --yt-surface-muted: #fcfcfd;
+  --yt-border: #d0d5dd;
+  --yt-border-strong: #98a2b3;
+  --yt-primary: #0f766e;
+  --yt-primary-hover: #115e59;
+  --yt-primary-soft: #ccfbf1;
+  --yt-blue: #2563eb;
+  --yt-blue-soft: #dbeafe;
+  --yt-navy: #111827;
+  --yt-success: #047857;
+  --yt-success-soft: #d1fae5;
+  --yt-warning: #b45309;
+  --yt-warning-soft: #fef3c7;
+  --yt-danger: #b42318;
+  --yt-danger-soft: #fee4e2;
+  --yt-text: #101828;
+  --yt-text-secondary: #344054;
+  --yt-text-muted: #667085;
+  --yt-text-faint: #98a2b3;
+  --yt-text-inverse: #ffffff;
+  --yt-radius-card: 8px;
+  --yt-radius-panel: 8px;
+  --yt-radius-button: 6px;
+  --yt-radius-input: 6px;
+  --yt-radius-row: 6px;
+  --yt-radius-pill: 999px;
+  --yt-shadow: 0 8px 24px rgba(16, 24, 40, 0.08);
+  --yt-shadow-soft: 0 4px 14px rgba(16, 24, 40, 0.06);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--yt-bg);
+  color: var(--yt-text);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  outline-color: var(--yt-primary);
+}
+
+:focus-visible {
+  outline: 2px solid var(--yt-primary);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: var(--yt-primary-soft);
+  color: var(--yt-text);
+}
+
+.yt-page {
+  background: var(--yt-bg);
+  color: var(--yt-text);
+  padding: 24px 32px 40px;
+}
+
+.yt-page-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.yt-page-title {
+  color: var(--yt-text);
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: 0;
+}
+
+.yt-page-subtitle {
+  margin-top: 4px;
+  max-width: 760px;
+  color: var(--yt-text-muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.yt-panel {
+  overflow: hidden;
+  border: 1px solid var(--yt-border);
+  border-radius: var(--yt-radius-panel);
+  background: var(--yt-surface);
+  box-shadow: var(--yt-shadow-soft);
+}
+
+.yt-panel-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid var(--yt-border);
+  padding: 16px 16px 12px;
+}
+
+.yt-panel-body {
+  padding: 16px;
+}
+
+.yt-panel-title {
+  color: var(--yt-text);
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.3;
+  letter-spacing: 0;
+}
+
+.yt-panel-note {
+  margin-top: 4px;
+  color: var(--yt-text-muted);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.yt-subpanel {
+  border: 1px solid var(--yt-border);
+  border-radius: var(--yt-radius-card);
+  background: var(--yt-surface-muted);
+  padding: 12px;
+}
+
+.yt-kpi {
+  min-height: 108px;
+  border: 1px solid var(--yt-border);
+  border-radius: var(--yt-radius-card);
+  background: var(--yt-surface);
+  padding: 16px;
+  box-shadow: var(--yt-shadow-soft);
+}
+
+.yt-kpi-label {
+  color: var(--yt-text-muted);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.4;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.yt-kpi-value {
+  margin-top: 8px;
+  color: var(--yt-text);
+  font-size: 30px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.yt-kpi-note {
+  margin-top: 4px;
+  color: var(--yt-text-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.yt-btn {
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--yt-radius-button);
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.2;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.yt-btn-primary {
+  border: 1px solid var(--yt-primary);
+  background: var(--yt-primary);
+  color: var(--yt-text-inverse);
+}
+
+.yt-btn-primary:hover {
+  border-color: var(--yt-primary-hover);
+  background: var(--yt-primary-hover);
+}
+
+.yt-btn-secondary {
+  border: 1px solid var(--yt-primary);
+  background: var(--yt-surface);
+  color: var(--yt-primary);
+}
+
+.yt-btn-secondary:hover {
+  border-color: var(--yt-primary-hover);
+  background: var(--yt-primary-soft);
+}
+
+.yt-btn-ghost {
+  border: 1px solid var(--yt-border);
+  background: var(--yt-surface);
+  color: var(--yt-text-secondary);
+}
+
+.yt-btn-ghost:hover {
+  border-color: var(--yt-border-strong);
+  background: var(--yt-surface-muted);
+}
+
+.yt-btn-danger {
+  border: 1px solid var(--yt-danger);
+  background: var(--yt-surface);
+  color: var(--yt-danger);
+}
+
+.yt-btn-danger:hover {
+  background: var(--yt-danger-soft);
+}
+
+.yt-btn:disabled,
+.yt-input:disabled {
+  cursor: not-allowed;
+  border-color: var(--yt-border);
+  background: var(--yt-surface-soft);
+  color: var(--yt-text-faint);
+}
+
+.yt-input {
+  min-height: 38px;
+  border: 1px solid var(--yt-border);
+  border-radius: var(--yt-radius-input);
+  background: var(--yt-surface);
+  color: var(--yt-text);
+  padding: 9px 11px;
+  font-size: 14px;
+}
+
+.yt-input:focus {
+  border-color: var(--yt-primary);
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
+  outline: none;
+}
+
+.yt-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  border: 1px solid var(--yt-border);
+  border-radius: var(--yt-radius-pill);
+  background: var(--yt-surface-soft);
+  color: var(--yt-text-secondary);
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+.yt-badge.success {
+  border-color: var(--yt-success-soft);
+  background: var(--yt-success-soft);
+  color: var(--yt-success);
+}
+
+.yt-badge.warning {
+  border-color: var(--yt-warning-soft);
+  background: var(--yt-warning-soft);
+  color: var(--yt-warning);
+}
+
+.yt-badge.danger {
+  border-color: var(--yt-danger-soft);
+  background: var(--yt-danger-soft);
+  color: var(--yt-danger);
+}
+
+.yt-badge.blue {
+  border-color: var(--yt-blue-soft);
+  background: var(--yt-blue-soft);
+  color: var(--yt-blue);
+}
+
+.yt-badge.primary {
+  border-color: var(--yt-primary);
+  background: var(--yt-primary-soft);
+  color: var(--yt-primary);
+}
+
+.yt-score {
+  display: inline-flex;
+  min-height: 40px;
+  min-width: 40px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--yt-success-soft);
+  border-radius: var(--yt-radius-button);
+  background: var(--yt-success-soft);
+  color: var(--yt-success);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.yt-rec-row {
+  display: grid;
+  gap: 12px;
+  padding: 14px 16px;
+  font-size: 14px;
+}
+
+.yt-signal-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--yt-border);
+  border-radius: var(--yt-radius-pill);
+  background: var(--yt-surface-muted);
+  color: var(--yt-text-secondary);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 9px;
+}
+
+.yt-table-scroll {
+  overflow-x: auto;
+}
+
+.yt-empty-state {
+  padding: 16px;
+  color: var(--yt-text-muted);
+  font-size: 14px;
+}
+
+@media (max-width: 700px) {
+  .yt-page {
+    padding: 20px 16px 32px;
+  }
+
+  .yt-page-title {
+    font-size: 24px;
+  }
+
+  .yt-btn,
+  .yt-input {
+    min-height: 44px;
+  }
+}

@@ -1,0 +1,657 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>YouTube Outlier SaaS Cost Simulator</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #101828;
+      --muted: #667085;
+      --line: #d0d5dd;
+      --soft: #f2f4f7;
+      --panel: #ffffff;
+      --accent: #0f766e;
+      --accent-2: #2563eb;
+      --warn: #b42318;
+      --good: #047857;
+      --shadow: 0 8px 24px rgba(16, 24, 40, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: #f8fafc;
+      line-height: 1.45;
+    }
+
+    header {
+      background: #111827;
+      color: white;
+      padding: 28px 32px 24px;
+      border-bottom: 5px solid var(--accent);
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 28px;
+      line-height: 1.15;
+      letter-spacing: 0;
+    }
+
+    header p {
+      margin: 8px 0 0;
+      max-width: 980px;
+      color: #d1d5db;
+      font-size: 15px;
+    }
+
+    main {
+      padding: 24px 32px 40px;
+      max-width: 1440px;
+      margin: 0 auto;
+    }
+
+    .grid {
+      display: grid;
+      gap: 18px;
+    }
+
+    .kpis {
+      grid-template-columns: repeat(4, minmax(180px, 1fr));
+      margin-bottom: 18px;
+    }
+
+    .kpi, .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+    }
+
+    .kpi {
+      padding: 16px;
+      min-height: 112px;
+    }
+
+    .kpi .label {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+
+    .kpi .value {
+      margin-top: 8px;
+      font-size: 30px;
+      font-weight: 800;
+      letter-spacing: 0;
+    }
+
+    .kpi .note {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .layout {
+      grid-template-columns: 360px 1fr;
+      align-items: start;
+    }
+
+    .panel h2 {
+      margin: 0;
+      padding: 16px 16px 12px;
+      font-size: 17px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .panel-body {
+      padding: 16px;
+    }
+
+    .assumption-group {
+      margin-bottom: 22px;
+    }
+
+    .assumption-group h3 {
+      margin: 0 0 10px;
+      font-size: 14px;
+      color: #344054;
+    }
+
+    label.control {
+      display: grid;
+      grid-template-columns: 1fr 96px;
+      gap: 10px;
+      align-items: center;
+      margin: 10px 0;
+      font-size: 13px;
+      color: #344054;
+    }
+
+    input[type="number"] {
+      width: 96px;
+      padding: 7px 8px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      font: inherit;
+      color: var(--ink);
+      background: white;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      border-top: 1px solid var(--line);
+      padding-top: 14px;
+    }
+
+    button {
+      border: 1px solid #0f766e;
+      background: var(--accent);
+      color: white;
+      border-radius: 6px;
+      padding: 9px 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    button.secondary {
+      background: white;
+      color: var(--accent);
+    }
+
+    .chart-wrap {
+      padding: 16px;
+      height: 430px;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: white;
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin: 0 16px 16px;
+    }
+
+    .summary-item {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      background: #fcfcfd;
+    }
+
+    .summary-item strong {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 13px;
+      color: #344054;
+    }
+
+    .summary-item span {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    th, td {
+      border-bottom: 1px solid var(--line);
+      padding: 10px 9px;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      background: #1f2937;
+      color: white;
+      z-index: 1;
+      font-size: 12px;
+    }
+
+    td:first-child, th:first-child {
+      text-align: left;
+    }
+
+    .table-wrap {
+      max-height: 520px;
+      overflow: auto;
+      border-top: 1px solid var(--line);
+    }
+
+    .positive { color: var(--good); font-weight: 700; }
+    .negative { color: var(--warn); font-weight: 700; }
+
+    .questions {
+      margin-top: 18px;
+    }
+
+    .questions ol {
+      margin: 0;
+      padding-left: 20px;
+    }
+
+    .questions li {
+      margin: 9px 0;
+      color: #344054;
+    }
+
+    @media (max-width: 980px) {
+      header, main { padding-left: 18px; padding-right: 18px; }
+      .layout, .kpis, .summary { grid-template-columns: 1fr; }
+      .chart-wrap { height: 320px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>YouTube Outlier SaaS Cost Simulator</h1>
+    <p>Production SaaS base-case model for a competitor research, daily report, AI outline, thumbnail generation, billing, credits, admin, and monitoring platform. Edit the assumptions to stress-test 0 to 15,000 paying users.</p>
+  </header>
+
+  <main>
+    <section class="grid kpis" aria-label="Key results">
+      <div class="kpi">
+        <div class="label">Break-even</div>
+        <div class="value" id="breakeven">-</div>
+        <div class="note">Paying users including team/ops</div>
+      </div>
+      <div class="kpi">
+        <div class="label">15k Software COGS</div>
+        <div class="value" id="cogs15k">-</div>
+        <div class="note">Infra, AI, exports, data, email</div>
+      </div>
+      <div class="kpi">
+        <div class="label">15k Total OpEx</div>
+        <div class="value" id="opex15k">-</div>
+        <div class="note">Software COGS + serious SaaS team</div>
+      </div>
+      <div class="kpi">
+        <div class="label">15k Op Profit</div>
+        <div class="value" id="profit15k">-</div>
+        <div class="note">After Stripe, COGS, team/ops</div>
+      </div>
+    </section>
+
+    <section class="grid layout">
+      <aside class="panel">
+        <h2>Editable Assumptions</h2>
+        <div class="panel-body" id="controls"></div>
+      </aside>
+
+      <section class="grid">
+        <div class="panel">
+          <h2>Revenue, Cost, and Profit Curve</h2>
+          <div class="summary">
+            <div class="summary-item">
+              <strong>Main constraint</strong>
+              <span>YouTube quota, global channel dedupe, and compliant transcript access.</span>
+            </div>
+            <div class="summary-item">
+              <strong>Model stance</strong>
+              <span>Managed LLM costs are included; no BYOK benefit assumed.</span>
+            </div>
+            <div class="summary-item">
+              <strong>Scale posture</strong>
+              <span>Team cost steps up at 1k, 3k, 7.5k, and 12.5k paying users.</span>
+            </div>
+          </div>
+          <div class="chart-wrap">
+            <canvas id="chart" width="1100" height="430" aria-label="Cost simulation chart"></canvas>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2>Simulation Table</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Users</th>
+                  <th>Revenue</th>
+                  <th>Stripe</th>
+                  <th>AI + Export</th>
+                  <th>Platform</th>
+                  <th>Software COGS</th>
+                  <th>Gross Margin</th>
+                  <th>Team/Ops</th>
+                  <th>Total OpEx</th>
+                  <th>Op Profit</th>
+                </tr>
+              </thead>
+              <tbody id="rows"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </section>
+
+    <section class="panel questions">
+      <h2>Clarifying Questions Needed Before PRD</h2>
+      <div class="panel-body">
+        <ol>
+          <li>Who is the first paid ICP: solo creators, agencies, B2B SaaS marketers, course sellers, or consultants?</li>
+          <li>Are we allowed to use third-party YouTube/transcript data providers, or must the platform be official-API-first?</li>
+          <li>Should credits apply to every AI action, or only expensive actions such as deep reports and thumbnail images?</li>
+          <li>Is the thumbnail module a lightweight template editor or a serious Canva-like editor?</li>
+          <li>What is the intended plan mix and pricing: $29/$79/$199, higher, or usage-first?</li>
+          <li>How long should transcripts, snapshots, generated assets, and reports be retained?</li>
+          <li>Should users be able to bring their own LLM keys, or should all model usage be managed and resold through credits?</li>
+          <li>Is 15,000 paying users a 12-month goal, 24-month goal, or architectural ceiling?</li>
+        </ol>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const userPoints = [0, 100, 250, 500, 750, 1000, 1500, 2000, 3000, 5000, 7500, 10000, 12500, 15000];
+
+    const assumptions = {
+      commercial: [
+        ["arpu", "Blended subscription ARPU", 68.5, "$"],
+        ["creditRevenue", "Avg paid credit revenue", 8, "$"],
+        ["stripePct", "Stripe variable fee", 2.9, "%"],
+        ["stripeFixed", "Stripe fixed fee/user", 0.36, "$"]
+      ],
+      usage: [
+        ["activeRatio", "Monthly active usage ratio", 35, "%"],
+        ["dailyReportRatio", "Daily report enabled ratio", 75, "%"],
+        ["channelsPerUser", "Avg competitor channels", 15, "#"],
+        ["dedupeExponent", "Channel dedupe exponent", 0.82, "#"],
+        ["uploadsPerChannel", "Uploads/channel/month", 12, "#"],
+        ["transcriptCoverage", "Transcript coverage", 55, "%"],
+        ["outlinesPerUser", "Outlines/user/month", 15, "#"],
+        ["imagesPerUser", "Thumbnail images/user/month", 4, "#"],
+        ["exportsPerUser", "Exports/user/month", 5, "#"]
+      ],
+      unitCosts: [
+        ["reportCost", "Daily report LLM cost", 0.055, "$"],
+        ["outlineCost", "Outline/writing LLM cost", 0.035, "$"],
+        ["imageCost", "Thumbnail image cost", 0.085, "$"],
+        ["transcriptCost", "Transcript + analysis/video", 0.075, "$"],
+        ["exportCost", "PDF/DOCX export cost", 0.02, "$"]
+      ],
+      platform: [
+        ["supabaseBase", "Supabase base", 25, "$"],
+        ["supabaseVar", "Supabase variable/user", 0.08, "$"],
+        ["vercelBase", "Vercel base", 40, "$"],
+        ["vercelVar", "Vercel variable/user", 0.05, "$"],
+        ["queueBase", "Queue/cron base", 100, "$"],
+        ["queueVar", "Queue/cron variable/user", 0.09, "$"],
+        ["monitoringBase", "Monitoring/admin base", 150, "$"],
+        ["monitoringVar", "Monitoring variable/user", 0.06, "$"],
+        ["youtubeBase", "YouTube/data reserve base", 500, "$"],
+        ["youtubeVar", "YouTube/data reserve/user", 0.2, "$"],
+        ["resendBase", "Resend base", 90, "$"],
+        ["includedEmails", "Included emails/month", 100000, "#"],
+        ["emailOverage", "Email overage/email", 0.0009, "$"]
+      ],
+      team: [
+        ["baseTeam", "Base team payroll", 35000, "$"],
+        ["supportVar", "Support variable/user", 3.5, "$"],
+        ["contingency", "COGS contingency", 20, "%"]
+      ]
+    };
+
+    const state = Object.fromEntries(Object.values(assumptions).flat().map(([key, , value]) => [key, value]));
+
+    const groupNames = {
+      commercial: "Commercial",
+      usage: "Usage",
+      unitCosts: "AI Unit Costs",
+      platform: "Platform",
+      team: "Team and Risk"
+    };
+
+    function pct(v) { return v / 100; }
+    function money(v) {
+      const abs = Math.abs(v);
+      const sign = v < 0 ? "-" : "";
+      if (abs >= 1000000) return `${sign}$${(abs / 1000000).toFixed(2)}M`;
+      if (abs >= 1000) return `${sign}$${Math.round(abs / 1000)}k`;
+      return `${sign}$${Math.round(abs).toLocaleString()}`;
+    }
+    function fullMoney(v) {
+      return `${v < 0 ? "-" : ""}$${Math.abs(v).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+    }
+    function num(v) { return Math.round(v).toLocaleString(); }
+
+    function model(users) {
+      const activeUsers = Math.round(users * pct(state.activeRatio));
+      const revenue = users * (state.arpu + state.creditRevenue);
+      const stripe = revenue * pct(state.stripePct) + users * state.stripeFixed;
+      const uniqueChannels = activeUsers === 0 ? 0 : Math.min(
+        activeUsers * state.channelsPerUser,
+        Math.round(Math.pow(activeUsers * state.channelsPerUser, state.dedupeExponent) * 1.4)
+      );
+      const coveredTranscriptVideos = Math.round(uniqueChannels * state.uploadsPerChannel * pct(state.transcriptCoverage));
+      const dailyReports = Math.round(users * pct(state.dailyReportRatio) * 30);
+      const reportLLM = dailyReports * state.reportCost;
+      const outlines = users * state.outlinesPerUser * state.outlineCost;
+      const images = users * state.imagesPerUser * state.imageCost;
+      const transcripts = coveredTranscriptVideos * state.transcriptCost;
+      const exports = users * state.exportsPerUser * state.exportCost;
+      const aiExport = reportLLM + outlines + images + transcripts + exports;
+
+      const platform =
+        state.supabaseBase + users * state.supabaseVar +
+        state.vercelBase + users * state.vercelVar +
+        state.queueBase + users * state.queueVar +
+        state.monitoringBase + users * state.monitoringVar +
+        state.youtubeBase + users * state.youtubeVar +
+        state.resendBase + Math.max(0, dailyReports + users * 4 - state.includedEmails) * state.emailOverage;
+
+      const contingency = (aiExport + platform) * pct(state.contingency);
+      const softwareCogs = aiExport + platform + contingency;
+      const grossMargin = revenue === 0 ? 0 : (revenue - softwareCogs) / revenue;
+      const teamSteps =
+        (users >= 1000 ? 30000 : 0) +
+        (users >= 3000 ? 50000 : 0) +
+        (users >= 7500 ? 90000 : 0) +
+        (users >= 12500 ? 90000 : 0);
+      const teamOps = state.baseTeam + users * state.supportVar + teamSteps;
+      const totalOpex = softwareCogs + teamOps;
+      const operatingProfit = revenue - stripe - totalOpex;
+
+      return { users, revenue, stripe, aiExport, platform, softwareCogs, grossMargin, teamOps, totalOpex, operatingProfit };
+    }
+
+    function renderControls() {
+      const root = document.getElementById("controls");
+      root.innerHTML = "";
+      for (const [groupKey, items] of Object.entries(assumptions)) {
+        const section = document.createElement("div");
+        section.className = "assumption-group";
+        section.innerHTML = `<h3>${groupNames[groupKey]}</h3>`;
+        for (const [key, label, value, unit] of items) {
+          const id = `input-${key}`;
+          const step = unit === "%" ? "0.1" : value < 1 ? "0.001" : "1";
+          const control = document.createElement("label");
+          control.className = "control";
+          control.htmlFor = id;
+          control.innerHTML = `<span>${label}</span><input id="${id}" type="number" step="${step}" value="${value}">`;
+          section.appendChild(control);
+        }
+        root.appendChild(section);
+      }
+      const actions = document.createElement("div");
+      actions.className = "actions";
+      actions.innerHTML = `<button type="button" id="reset">Reset Base Case</button><button type="button" class="secondary" id="conservative">Conservative Case</button>`;
+      root.appendChild(actions);
+
+      root.querySelectorAll("input").forEach(input => {
+        input.addEventListener("input", event => {
+          const key = event.target.id.replace("input-", "");
+          state[key] = Number(event.target.value || 0);
+          render();
+        });
+      });
+      document.getElementById("reset").addEventListener("click", () => {
+        Object.values(assumptions).flat().forEach(([key, , value]) => state[key] = value);
+        syncInputs();
+        render();
+      });
+      document.getElementById("conservative").addEventListener("click", () => {
+        Object.assign(state, {
+          arpu: 58,
+          creditRevenue: 5,
+          reportCost: 0.08,
+          outlineCost: 0.05,
+          imageCost: 0.12,
+          transcriptCost: 0.11,
+          supabaseVar: 0.12,
+          queueVar: 0.14,
+          youtubeVar: 0.35,
+          supportVar: 5,
+          contingency: 30
+        });
+        syncInputs();
+        render();
+      });
+    }
+
+    function syncInputs() {
+      for (const key of Object.keys(state)) {
+        const el = document.getElementById(`input-${key}`);
+        if (el) el.value = state[key];
+      }
+    }
+
+    function renderTable(results) {
+      document.getElementById("rows").innerHTML = results.map(r => `
+        <tr>
+          <td>${num(r.users)}</td>
+          <td>${fullMoney(r.revenue)}</td>
+          <td>${fullMoney(r.stripe)}</td>
+          <td>${fullMoney(r.aiExport)}</td>
+          <td>${fullMoney(r.platform)}</td>
+          <td>${fullMoney(r.softwareCogs)}</td>
+          <td>${(r.grossMargin * 100).toFixed(1)}%</td>
+          <td>${fullMoney(r.teamOps)}</td>
+          <td>${fullMoney(r.totalOpex)}</td>
+          <td class="${r.operatingProfit >= 0 ? "positive" : "negative"}">${fullMoney(r.operatingProfit)}</td>
+        </tr>
+      `).join("");
+    }
+
+    function renderKpis(results) {
+      const breakeven = results.find(r => r.operatingProfit > 0);
+      const last = results[results.length - 1];
+      document.getElementById("breakeven").textContent = breakeven ? num(breakeven.users) : "Not reached";
+      document.getElementById("cogs15k").textContent = money(last.softwareCogs);
+      document.getElementById("opex15k").textContent = money(last.totalOpex);
+      const profit = document.getElementById("profit15k");
+      profit.textContent = money(last.operatingProfit);
+      profit.className = `value ${last.operatingProfit >= 0 ? "positive" : "negative"}`;
+    }
+
+    function drawChart(results) {
+      const canvas = document.getElementById("chart");
+      const ctx = canvas.getContext("2d");
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = Math.round(rect.width * dpr);
+      canvas.height = Math.round(rect.height * dpr);
+      ctx.scale(dpr, dpr);
+
+      const w = rect.width;
+      const h = rect.height;
+      ctx.clearRect(0, 0, w, h);
+
+      const pad = { left: 78, right: 28, top: 28, bottom: 54 };
+      const plotW = w - pad.left - pad.right;
+      const plotH = h - pad.top - pad.bottom;
+      const series = [
+        { key: "revenue", label: "Revenue", color: "#0f766e" },
+        { key: "totalOpex", label: "Total OpEx", color: "#2563eb" },
+        { key: "operatingProfit", label: "Operating Profit", color: "#b42318" }
+      ];
+      const maxY = Math.max(...results.flatMap(r => series.map(s => r[s.key])), 1000);
+      const minY = Math.min(...results.map(r => r.operatingProfit), 0);
+      const range = maxY - minY || 1;
+      const x = i => pad.left + (i / (results.length - 1)) * plotW;
+      const y = value => pad.top + (maxY - value) / range * plotH;
+
+      ctx.strokeStyle = "#d0d5dd";
+      ctx.lineWidth = 1;
+      ctx.font = "12px Inter, sans-serif";
+      ctx.fillStyle = "#667085";
+      for (let i = 0; i <= 5; i++) {
+        const value = minY + (range * i / 5);
+        const yy = y(value);
+        ctx.beginPath();
+        ctx.moveTo(pad.left, yy);
+        ctx.lineTo(w - pad.right, yy);
+        ctx.stroke();
+        ctx.fillText(money(value), 10, yy + 4);
+      }
+      ctx.strokeStyle = "#98a2b3";
+      ctx.beginPath();
+      ctx.moveTo(pad.left, y(0));
+      ctx.lineTo(w - pad.right, y(0));
+      ctx.stroke();
+
+      for (const s of series) {
+        ctx.strokeStyle = s.color;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        results.forEach((r, i) => {
+          const xx = x(i);
+          const yy = y(r[s.key]);
+          if (i === 0) ctx.moveTo(xx, yy);
+          else ctx.lineTo(xx, yy);
+        });
+        ctx.stroke();
+      }
+
+      ctx.fillStyle = "#344054";
+      ctx.textAlign = "center";
+      results.forEach((r, i) => {
+        if (i % 2 === 0 || i === results.length - 1) {
+          ctx.fillText(r.users >= 1000 ? `${r.users / 1000}k` : String(r.users), x(i), h - 24);
+        }
+      });
+      ctx.textAlign = "left";
+      series.forEach((s, i) => {
+        const lx = pad.left + i * 170;
+        ctx.fillStyle = s.color;
+        ctx.fillRect(lx, 10, 12, 12);
+        ctx.fillStyle = "#344054";
+        ctx.fillText(s.label, lx + 18, 20);
+      });
+    }
+
+    function render() {
+      const results = userPoints.map(model);
+      renderKpis(results);
+      renderTable(results);
+      drawChart(results);
+    }
+
+    renderControls();
+    render();
+    window.addEventListener("resize", render);
+  </script>
+</body>
+</html>

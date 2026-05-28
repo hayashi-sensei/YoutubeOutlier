@@ -1,0 +1,807 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum SubscriptionStatus {
+  INCOMPLETE
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  UNPAID
+  PAUSED
+}
+
+enum PlanCode {
+  FREE
+  STARTER
+  PRO
+  PREMIUM
+}
+
+enum CreditTransactionType {
+  MONTHLY_REFILL
+  PURCHASE
+  USAGE
+  ADMIN_ADJUSTMENT
+  REFUND
+  EXPIRATION
+}
+
+enum JobStatus {
+  QUEUED
+  RUNNING
+  SUCCEEDED
+  FAILED
+  CANCELED
+  RETRYING
+}
+
+enum TranscriptStatus {
+  NOT_REQUESTED
+  QUEUED
+  AVAILABLE
+  UNAVAILABLE
+  FAILED
+  SKIPPED
+}
+
+enum ReportStatus {
+  QUEUED
+  GENERATING
+  COMPLETED
+  FAILED
+}
+
+enum ContentStatus {
+  IDEA
+  OUTLINE
+  SCRIPT
+  THUMBNAIL
+  SCHEDULED
+  PUBLISHED
+  ARCHIVED
+}
+
+enum AiGenerationStatus {
+  QUEUED
+  RUNNING
+  SUCCEEDED
+  FAILED
+}
+
+enum VisualAssetType {
+  YOUTUBE_THUMBNAIL
+  LINKEDIN_IMAGE
+  LINKEDIN_CAROUSEL_COVER
+  QUOTE_CARD
+  DIAGRAM
+}
+
+enum RecommendationStatus {
+  NEW
+  SAVED
+  DISMISSED
+  USED
+  EXPIRED
+}
+
+enum TopicRecommendationKind {
+  STANDARD
+  EXPERIMENTAL
+}
+
+enum SourceType {
+  WEBSITE
+  RSS
+  BLOG
+  NEWSLETTER
+  BRAND_PAGE
+  OTHER
+}
+
+model User {
+  id                  String               @id @default(cuid())
+  supabaseUserId      String?              @unique
+  email               String               @unique
+  name                String?
+  avatarUrl           String?
+  role                UserRole             @default(USER)
+  defaultWorkspaceId  String?
+  creditBalance       Int                  @default(0)
+  stripeCustomerId    String?              @unique
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+
+  workspaces          WorkspaceMember[]
+  ownedWorkspaces     Workspace[]          @relation("WorkspaceOwner")
+  subscriptions        Subscription[]
+  creditTransactions  CreditTransaction[]
+  aiGenerations       AiGeneration[]
+  adminAuditLogs      AdminAuditLog[]      @relation("AdminActor")
+}
+
+model Workspace {
+  id                 String               @id @default(cuid())
+  ownerId            String
+  name               String
+  slug               String               @unique
+  logoUrl            String?
+  planCode           PlanCode             @default(FREE)
+  /// Legacy workspace-level credit mirror retained during the account-credit migration.
+  creditBalance      Int                  @default(0)
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+
+  owner              User                 @relation("WorkspaceOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  members            WorkspaceMember[]
+  settings           WorkspaceSettings?
+  subscriptions      Subscription[]
+  trackedChannels    TrackedChannel[]
+  industrySources    IndustrySource[]
+  reports            ResearchReport[]
+  recommendations    TopicRecommendation[]
+  contentItems       ContentItem[]
+  aiGenerations      AiGeneration[]
+  creditTransactions CreditTransaction[]
+  jobs               JobRun[]
+  opportunityScores  WorkspaceVideoOpportunityScore[]
+  competitorBlueprints CompetitorBlueprint[]
+
+  @@index([ownerId])
+}
+
+model PlanLimit {
+  id                 String    @id @default(cuid())
+  planCode           PlanCode  @unique
+  monthlyCredits     Int
+  maxTrackedChannels Int
+  maxWorkspaces      Int       @default(1)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+}
+
+model UserRoleLimit {
+  id                 String    @id @default(cuid())
+  role               UserRole  @unique
+  monthlyCredits     Int
+  maxTrackedChannels Int
+  maxWorkspaces      Int       @default(1)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+}
+
+model WorkspaceMember {
+  id          String     @id @default(cuid())
+  workspaceId String
+  userId      String
+  role        UserRole   @default(USER)
+  createdAt   DateTime   @default(now())
+
+  workspace   Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId])
+  @@index([userId])
+}
+
+model WorkspaceSettings {
+  id                   String     @id @default(cuid())
+  workspaceId          String     @unique
+  primaryNiche          String
+  subNiche              String?
+  targetAudience        String?
+  contentGoals          String?
+  brandVoice            String?
+  cta                   String?
+  offers                String?
+  topicsToAvoid         String?
+  defaultAiQualityTier  String     @default("standard")
+  dailyReportEnabled    Boolean    @default(false)
+  recommendationsStaleAt DateTime?
+  reportDeliveryEmail   String?
+  timezone              String     @default("Asia/Singapore")
+  createdAt             DateTime   @default(now())
+  updatedAt             DateTime   @updatedAt
+
+  workspace             Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  writingSamples        WritingStyleSample[]
+
+  @@index([dailyReportEnabled, updatedAt])
+}
+
+model WritingStyleSample {
+  id          String             @id @default(cuid())
+  settingsId  String
+  title       String?
+  sampleText  String
+  createdAt   DateTime           @default(now())
+
+  settings    WorkspaceSettings  @relation(fields: [settingsId], references: [id], onDelete: Cascade)
+}
+
+model Subscription {
+  id                    String             @id @default(cuid())
+  workspaceId           String
+  userId                String
+  planCode              PlanCode
+  status                SubscriptionStatus
+  stripeSubscriptionId  String?            @unique
+  stripePriceId         String?
+  currentPeriodStart    DateTime?
+  currentPeriodEnd      DateTime?
+  cancelAtPeriodEnd     Boolean            @default(false)
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+
+  workspace             Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user                  User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+  @@index([userId])
+  @@index([status])
+}
+
+model CreditTransaction {
+  id             String                 @id @default(cuid())
+  workspaceId    String?
+  userId         String?
+  type           CreditTransactionType
+  amount         Int
+  balanceAfter   Int
+  description    String?
+  referenceType  String?
+  referenceId    String?
+  createdAt      DateTime               @default(now())
+
+  workspace      Workspace?             @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
+  user           User?                  @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, createdAt])
+  @@index([userId, createdAt])
+  @@index([referenceType, referenceId])
+}
+
+model YoutubeChannel {
+  id                 String            @id @default(cuid())
+  youtubeChannelId   String            @unique
+  handle             String?
+  title              String
+  description        String?
+  thumbnailUrl       String?
+  subscriberCount    BigInt?
+  videoCount         Int?
+  viewCount          BigInt?
+  uploadsPlaylistId  String?
+  country            String?
+  lastFetchedAt      DateTime?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  trackedBy          TrackedChannel[]
+  videos             YoutubeVideo[]
+  recommendations    CompetitorRecommendation[]
+  competitorBlueprints CompetitorBlueprint[]
+
+  @@index([handle])
+  @@index([lastFetchedAt])
+}
+
+model TrackedChannel {
+  id                  String          @id @default(cuid())
+  workspaceId          String
+  youtubeChannelId     String
+  nickname             String?
+  isActive             Boolean         @default(true)
+  reason               String?
+  addedByRecommendation Boolean        @default(false)
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+
+  workspace            Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  channel              YoutubeChannel  @relation(fields: [youtubeChannelId], references: [id], onDelete: Cascade)
+  sourceRecommendations TopicRecommendation[] @relation("TrackedChannelRecommendationSource")
+
+  @@unique([workspaceId, youtubeChannelId])
+  @@index([isActive, workspaceId, createdAt])
+  @@index([workspaceId, isActive])
+}
+
+model CompetitorRecommendation {
+  id                String          @id @default(cuid())
+  workspaceId        String
+  youtubeChannelId   String?
+  channelUrl         String
+  title              String
+  reason             String
+  relevanceScore     Float
+  status             RecommendationStatus @default(NEW)
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  channel            YoutubeChannel? @relation(fields: [youtubeChannelId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, status])
+}
+
+model YoutubeVideo {
+  id                  String             @id @default(cuid())
+  youtubeVideoId      String             @unique
+  youtubeChannelId    String
+  title               String
+  description         String?
+  publishedAt         DateTime
+  durationSeconds     Int?
+  thumbnailUrl        String?
+  tags                String[]
+  categoryId          String?
+  defaultLanguage     String?
+  transcriptStatus    TranscriptStatus   @default(NOT_REQUESTED)
+  lastFetchedAt       DateTime?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  channel             YoutubeChannel     @relation(fields: [youtubeChannelId], references: [id], onDelete: Cascade)
+  metricSnapshots     VideoMetricSnapshot[]
+  transcript          VideoTranscript?
+  analyses            VideoAnalysis[]
+  outlierScores       OutlierScore[]
+  opportunityScores   WorkspaceVideoOpportunityScore[]
+  recommendations     TopicRecommendationEvidence[]
+
+  @@index([youtubeChannelId, publishedAt])
+  @@index([transcriptStatus, createdAt])
+  @@index([publishedAt])
+  @@index([lastFetchedAt])
+}
+
+model VideoMetricSnapshot {
+  id             String        @id @default(cuid())
+  youtubeVideoId String
+  viewCount      BigInt?
+  likeCount      BigInt?
+  commentCount   BigInt?
+  capturedAt     DateTime      @default(now())
+
+  video          YoutubeVideo  @relation(fields: [youtubeVideoId], references: [id], onDelete: Cascade)
+
+  @@index([youtubeVideoId, capturedAt])
+}
+
+model YoutubeQuotaUsage {
+  id            String    @id @default(cuid())
+  quotaDate     DateTime
+  operation     String
+  units         Int
+  referenceType String?
+  referenceId   String?
+  createdAt     DateTime  @default(now())
+
+  @@index([quotaDate])
+  @@index([operation, quotaDate])
+  @@index([referenceType, referenceId])
+}
+
+model VideoTranscript {
+  id              String          @id @default(cuid())
+  youtubeVideoId  String          @unique
+  provider        String?
+  language        String?
+  text            String?
+  segmentsJson    Json?
+  fetchedAt       DateTime?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  video           YoutubeVideo    @relation(fields: [youtubeVideoId], references: [id], onDelete: Cascade)
+}
+
+model VideoAnalysis {
+  id                String        @id @default(cuid())
+  youtubeVideoId    String
+  analysisType       String
+  contentPillar      String?
+  hookType           String?
+  titlePattern       String?
+  thumbnailPattern   String?
+  structureJson      Json?
+  summary            String?
+  ctaPattern         String?
+  emotionalAngle     String?
+  model              String?
+  createdAt          DateTime      @default(now())
+
+  video              YoutubeVideo  @relation(fields: [youtubeVideoId], references: [id], onDelete: Cascade)
+
+  @@index([youtubeVideoId, analysisType])
+}
+
+model OutlierScore {
+  id                         String        @id @default(cuid())
+  youtubeVideoId              String
+  channelBaselineViews        Float?
+  relativeViewPerformance     Float?
+  viewVelocityScore           Float?
+  engagementScore             Float?
+  recencyScore                Float?
+  repeatSignalScore           Float?
+  outlierScore                Float
+  multiplier                  Float?
+  calculatedAt                DateTime      @default(now())
+
+  video                       YoutubeVideo  @relation(fields: [youtubeVideoId], references: [id], onDelete: Cascade)
+  opportunityScores           WorkspaceVideoOpportunityScore[]
+
+  @@index([youtubeVideoId, calculatedAt])
+  @@index([outlierScore])
+}
+
+model WorkspaceVideoOpportunityScore {
+  id                           String        @id @default(cuid())
+  workspaceId                  String
+  youtubeVideoId               String
+  outlierScoreId               String?
+  nicheRelevanceScore          Float?
+  topicFreshnessScore          Float?
+  competitiveSaturationScore   Float?
+  sourceCorroborationScore     Float?
+  brandFitScore                Float?
+  opportunityScore             Float
+  calculatedAt                 DateTime      @default(now())
+
+  workspace                    Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  video                        YoutubeVideo  @relation(fields: [youtubeVideoId], references: [id], onDelete: Cascade)
+  outlierScore                 OutlierScore? @relation(fields: [outlierScoreId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, opportunityScore])
+  @@index([workspaceId, calculatedAt])
+  @@index([workspaceId, youtubeVideoId, calculatedAt])
+  @@index([youtubeVideoId])
+  @@index([outlierScoreId])
+}
+
+model CompetitorBlueprint {
+  id                  String         @id @default(cuid())
+  workspaceId         String
+  youtubeChannelId    String
+  summary             String?
+  titlePatterns       Json
+  hookPatterns        Json
+  thumbnailPatterns   Json
+  contentPillars      Json
+  structurePatterns   Json
+  ctaPatterns         Json
+  emotionalAngles     Json
+  observationsJson    Json
+  topVideoIds         String[]
+  videoCount          Int            @default(0)
+  averageOutlierScore Float?
+  generatedAt         DateTime       @default(now())
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+
+  workspace           Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  channel             YoutubeChannel @relation(fields: [youtubeChannelId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, youtubeChannelId])
+  @@index([workspaceId, updatedAt])
+  @@index([youtubeChannelId])
+}
+
+model IndustrySource {
+  id               String       @id @default(cuid())
+  workspaceId       String
+  url              String
+  name             String?
+  sourceType       SourceType   @default(WEBSITE)
+  rssUrl           String?
+  isActive         Boolean      @default(true)
+  lastFetchedAt    DateTime?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  workspace        Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  items            IndustrySourceItem[]
+
+  @@unique([workspaceId, url])
+  @@index([workspaceId, isActive])
+  @@index([isActive, lastFetchedAt])
+}
+
+model IndustrySourceItem {
+  id              String         @id @default(cuid())
+  sourceId         String
+  url             String
+  title           String
+  author          String?
+  summary         String?
+  contentText     String?
+  publishedAt     DateTime?
+  fetchedAt       DateTime       @default(now())
+  contentHash     String?
+
+  source          IndustrySource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  evidences       TopicRecommendationEvidence[]
+
+  @@unique([sourceId, url])
+  @@index([sourceId, publishedAt])
+}
+
+model TopicRecommendation {
+  id                  String                   @id @default(cuid())
+  workspaceId          String
+  reportId             String?
+  sourceTrackedChannelId String?
+  title                String
+  topic                String
+  angle                String?
+  whyNow               String?
+  audiencePainPoint    String?
+  opportunityScore     Float?
+  suggestedHook        String?
+  suggestedTitle       String?
+  thumbnailConcept     String?
+  outlineJson          Json?
+  linkedinAngle        String?
+  status               RecommendationStatus    @default(NEW)
+  kind                 TopicRecommendationKind  @default(STANDARD)
+  createdAt            DateTime                 @default(now())
+  updatedAt            DateTime                 @updatedAt
+
+  workspace            Workspace                @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  report               ResearchReport?          @relation(fields: [reportId], references: [id], onDelete: SetNull)
+  sourceTrackedChannel  TrackedChannel?          @relation("TrackedChannelRecommendationSource", fields: [sourceTrackedChannelId], references: [id], onDelete: Cascade)
+  evidences            TopicRecommendationEvidence[]
+  contentItems         ContentItem[]
+
+  @@index([workspaceId, status, createdAt])
+  @@index([workspaceId, kind, createdAt])
+  @@index([workspaceId, sourceTrackedChannelId, createdAt])
+  @@index([status, createdAt])
+  @@index([reportId])
+}
+
+model TopicRecommendationEvidence {
+  id                    String              @id @default(cuid())
+  recommendationId       String
+  youtubeVideoId         String?
+  sourceItemId           String?
+  evidenceType           String
+  note                   String?
+  createdAt              DateTime            @default(now())
+
+  recommendation         TopicRecommendation @relation(fields: [recommendationId], references: [id], onDelete: Cascade)
+  video                  YoutubeVideo?       @relation(fields: [youtubeVideoId], references: [id], onDelete: SetNull)
+  sourceItem             IndustrySourceItem? @relation(fields: [sourceItemId], references: [id], onDelete: SetNull)
+
+  @@index([recommendationId])
+}
+
+model ResearchReport {
+  id              String              @id @default(cuid())
+  workspaceId      String
+  title           String
+  status          ReportStatus         @default(QUEUED)
+  reportDate      DateTime
+  manualRun       Boolean              @default(false)
+  summary         String?
+  sectionsJson    Json?
+  errorMessage    String?
+  generatedAt     DateTime?
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+
+  workspace       Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  recommendations TopicRecommendation[]
+  exports         ExportFile[]
+
+  @@index([workspaceId, reportDate])
+  @@index([workspaceId, status])
+}
+
+model ContentItem {
+  id                  String              @id @default(cuid())
+  workspaceId          String
+  recommendationId     String?
+  title                String
+  contentType          String
+  status               ContentStatus       @default(IDEA)
+  sourceType           String              @default("recommendation")
+  manualTopic          String?
+  evidenceSnapshot     Json?
+  scheduledFor         DateTime?
+  publishedAt          DateTime?
+  notes                String?
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+
+  workspace            Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  recommendation       TopicRecommendation? @relation(fields: [recommendationId], references: [id], onDelete: SetNull)
+  assets               ContentAsset[]
+  visualAssets         VisualAsset[]
+
+  @@index([workspaceId, status])
+  @@index([workspaceId, scheduledFor])
+  @@index([workspaceId, sourceType, updatedAt])
+}
+
+model ContentAsset {
+  id             String       @id @default(cuid())
+  contentItemId  String
+  aiGenerationId String?
+  assetType      String
+  title          String?
+  body           String?
+  jsonBody       Json?
+  version        Int          @default(1)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  contentItem    ContentItem  @relation(fields: [contentItemId], references: [id], onDelete: Cascade)
+
+  @@unique([contentItemId, assetType, version])
+  @@index([contentItemId, assetType])
+  @@index([aiGenerationId])
+}
+
+model VisualAsset {
+  id             String          @id @default(cuid())
+  workspaceId    String
+  contentItemId  String?
+  aiGenerationId String?
+  assetType      VisualAssetType
+  provider       String
+  model          String?
+  aspectRatio    String          @default("16:9")
+  prompt         String
+  visualStrategy Json?
+  editableOverlays Json?
+  imageUrl       String?
+  storagePath    String?
+  width          Int?
+  height         Int?
+  costUsd        Decimal?        @db.Decimal(10, 4)
+  createdAt      DateTime        @default(now())
+
+  contentItem    ContentItem?    @relation(fields: [contentItemId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, createdAt])
+  @@index([contentItemId])
+  @@index([aiGenerationId])
+}
+
+model AiGeneration {
+  id               String              @id @default(cuid())
+  workspaceId       String
+  userId            String?
+  taskType          String
+  provider          String
+  model             String
+  status            AiGenerationStatus  @default(QUEUED)
+  promptHash        String?
+  inputTokens       Int?
+  outputTokens      Int?
+  costUsd           Decimal?            @db.Decimal(10, 4)
+  creditsCharged    Int                 @default(0)
+  requestJson       Json?
+  responseJson      Json?
+  errorMessage      String?
+  createdAt         DateTime            @default(now())
+  completedAt       DateTime?
+
+  workspace         Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user              User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, taskType, createdAt])
+  @@index([status])
+}
+
+model AiTaskRouteOverride {
+  id                String    @id @default(cuid())
+  taskType          String
+  qualityTier       String
+  provider          String
+  model             String
+  credits           Int
+  estimatedCostUsd  Decimal   @db.Decimal(10, 4)
+  maxOutputTokens   Int
+  temperature       Decimal   @db.Decimal(4, 2)
+  updatedByUserId   String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@unique([taskType, qualityTier])
+  @@index([provider])
+}
+
+model JobRun {
+  id             String      @id @default(cuid())
+  workspaceId    String?
+  jobType        String
+  status         JobStatus   @default(QUEUED)
+  provider       String?
+  referenceType  String?
+  referenceId    String?
+  attempts       Int         @default(0)
+  maxAttempts    Int         @default(3)
+  startedAt      DateTime?
+  completedAt    DateTime?
+  scheduledFor   DateTime?
+  availableAt    DateTime?
+  claimedAt      DateTime?
+  lastHeartbeatAt DateTime?
+  queueLatencyMs Int?
+  errorMessage   String?
+  providerError  Json?
+  metadata       Json?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  workspace      Workspace?  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, status])
+  @@index([jobType, status])
+  @@index([status, availableAt])
+  @@index([jobType, status, availableAt, createdAt])
+  @@index([workspaceId, jobType, status, createdAt])
+  @@index([status, lastHeartbeatAt])
+  @@index([referenceType, referenceId])
+}
+
+model ExportFile {
+  id             String         @id @default(cuid())
+  workspaceId    String
+  reportId       String?
+  fileType       String
+  storagePath    String
+  downloadUrl    String?
+  expiresAt      DateTime?
+  createdAt      DateTime       @default(now())
+
+  report         ResearchReport? @relation(fields: [reportId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, createdAt])
+  @@index([reportId])
+}
+
+model EmailLog {
+  id             String     @id @default(cuid())
+  workspaceId    String?
+  toEmail        String
+  template       String
+  provider       String     @default("resend")
+  providerId     String?
+  status         String
+  errorMessage   String?
+  metadata       Json?
+  createdAt      DateTime   @default(now())
+
+  @@index([workspaceId, createdAt])
+  @@index([status])
+}
+
+model AdminAuditLog {
+  id           String    @id @default(cuid())
+  actorUserId  String?
+  action       String
+  targetType   String
+  targetId     String?
+  reason       String?
+  metadata     Json?
+  createdAt    DateTime  @default(now())
+
+  actor        User?     @relation("AdminActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([actorUserId, createdAt])
+  @@index([targetType, targetId])
+}

@@ -1,0 +1,11 @@
+ALTER TABLE "PlanLimit"
+ADD COLUMN "maxWorkspaces" INTEGER NOT NULL DEFAULT 1;
+
+UPDATE "PlanLimit"
+SET "maxWorkspaces" = CASE "planCode"
+  WHEN 'FREE' THEN 0
+  WHEN 'STARTER' THEN 1
+  WHEN 'PRO' THEN 5
+  WHEN 'PREMIUM' THEN 10
+  ELSE 1
+END;

@@ -1,0 +1,1 @@
+ALTER TYPE "RecommendationStatus" ADD VALUE IF NOT EXISTS 'EXPIRED';

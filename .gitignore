@@ -1,0 +1,11 @@
+.env*
+!.env.example
+.codex/
+.next/
+node_modules/
+generated/
+coverage/
+dist/
+*.log
+*.tsbuildinfo
+outputs/report_exports/
