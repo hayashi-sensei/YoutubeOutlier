@@ -52,6 +52,12 @@ Before starting a spec, review and update the [Integration To-Do](./list-to-do.m
 23. [023 Security RLS And Compliance](./023-security-rls-and-compliance.md)
 24. [024 Production Readiness](./024-production-readiness.md)
 
+## Phase 6: Infrastructure Migration
+
+25. [025 Neon Database Migration](./025-neon-database-migration.md)
+26. [026 Auth.js Google OAuth](./026-authjs-google-oauth.md)
+27. [027 Cloudflare R2 Storage](./027-cloudflare-r2-storage.md)
+
 ## Recommended Build Order
 
 1. App foundation
@@ -69,3 +75,6 @@ Before starting a spec, review and update the [Integration To-Do](./list-to-do.m
 13. Visual generation
 14. Repurposing
 15. Admin and monitoring hardening
+16. Neon database migration
+17. Auth.js Google OAuth
+18. Cloudflare R2 storage
